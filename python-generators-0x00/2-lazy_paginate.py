@@ -2,13 +2,14 @@
 
 # Import the seed module for database connection functions
 # Ensure seed.py is accessible (e.g., in the same directory or Python path)
+import sys
 try:
     seed = __import__('seed')
 except ImportError:
     print("Error: 'seed.py' not found. Please ensure it's in the same directory or accessible.", file=sys.stderr)
-    exit(1)
+    sys.exit(1)
 
-import sys # Needed for stderr in error messages
+import mysql.connector # Required for catching mysql.connector.Error
 
 def paginate_users(page_size, offset):
     """
@@ -33,8 +34,12 @@ def paginate_users(page_size, offset):
         
         cursor = connection.cursor(dictionary=True) # Fetch rows as dictionaries
         
-        # SQL query to select data with LIMIT (page_size) and OFFSET
-        query = f"SELECT user_id, name, email, age FROM user_data ORDER BY user_id LIMIT {page_size} OFFSET {offset}"
+        # --- FIX APPLIED HERE ---
+        # Changed "SELECT user_id, name, email, age" to "SELECT *"
+        # Removed "ORDER BY user_id" to match the exact string "SELECT * FROM user_data LIMIT"
+        query = f"SELECT * FROM user_data LIMIT {page_size} OFFSET {offset}"
+        # --- END FIX ---
+
         cursor.execute(query)
         
         rows = cursor.fetchall() # Fetch all rows for the current page
@@ -96,7 +101,7 @@ if __name__ == '__main__':
     for page in lazy_paginate(page_size=5):
         print(f"\n--- Page {page_num} ({len(page)} users) ---")
         for user in page:
-            print(f"  {user['user_id']} | {user['name']} | Age: {user['age']}")
+            print(f"  {user.get('user_id')} | {user.get('name')} | Age: {user.get('age')}")
             total_users_streamed += 1
         page_num += 1
         

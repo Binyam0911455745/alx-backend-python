@@ -1,4 +1,4 @@
-import asyncio     
+import asyncio
 import aiosqlite
 import logging
 import sys
@@ -19,7 +19,7 @@ def setup_db(db_name='users.db'):
     try:
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
-        
+
         # Drop the table if it exists to ensure a clean schema for testing
         logging.info("Dropping existing 'users' table if it exists to ensure fresh schema.")
         cursor.execute('DROP TABLE IF EXISTS users')
@@ -43,11 +43,11 @@ def setup_db(db_name='users.db'):
             ('Bob Williams', 'bob@example.com', 22),
             ('Charlie Brown', 'charlie@example.com', 45), # Older user
             ('David Lee', 'david.lee@example.com', 28),
-            ('Eve Davis', 'eve@example.com', 50),     # Older user
+            ('Eve Davis', 'eve@example.com', 50),       # Older user
             ('Frank Green', 'frank@example.com', 20),
             ('Grace Hall', 'grace@example.com', 42)    # Older user
         ]
-        
+
         inserted_count = 0
         for name, email, age in users_to_insert:
             try:
@@ -58,7 +58,7 @@ def setup_db(db_name='users.db'):
                 logging.warning(f"Skipping insert for {name} ({email}) due to unique email constraint.")
         conn.commit()
         logging.info(f"Inserted {inserted_count} sample users into 'users' table.")
-            
+
     except sqlite3.Error as e:
         logging.error(f"Error setting up database: {e}", exc_info=True)
     finally:
@@ -67,11 +67,13 @@ def setup_db(db_name='users.db'):
 
 # --- Asynchronous functions for fetching data ---
 
-async def async_fetch_users(db_name='users.db'):
+# CHANGE START: Removed db_name='users.db' from signature
+async def async_fetch_users():
     """
     Asynchronously fetches all users from the database.
     Uses aiosqlite for asynchronous database operations.
     """
+    db_name = 'users.db' # Define db_name inside the function
     logging.info("async_fetch_users: Starting to fetch all users.")
     start_time = time.time()
     results = []
@@ -79,7 +81,7 @@ async def async_fetch_users(db_name='users.db'):
         # Use aiosqlite's async context manager for connection and cursor
         async with aiosqlite.connect(db_name) as db:
             # Simulate a brief delay to make concurrency more observable
-            await asyncio.sleep(0.1) 
+            await asyncio.sleep(0.1)
             async with db.cursor() as cursor:
                 await cursor.execute("SELECT id, name, email, age FROM users")
                 results = await cursor.fetchall()
@@ -88,18 +90,20 @@ async def async_fetch_users(db_name='users.db'):
         logging.error(f"async_fetch_users: An error occurred: {e}", exc_info=True)
     return results
 
-async def async_fetch_older_users(db_name='users.db'):
+# CHANGE START: Removed db_name='users.db' from signature
+async def async_fetch_older_users():
     """
     Asynchronously fetches users older than 40 from the database.
     Uses aiosqlite for asynchronous database operations.
     """
+    db_name = 'users.db' # Define db_name inside the function
     logging.info("async_fetch_older_users: Starting to fetch older users.")
     start_time = time.time()
     results = []
     try:
         async with aiosqlite.connect(db_name) as db:
             # Simulate a brief delay to make concurrency more observable
-            await asyncio.sleep(0.1) 
+            await asyncio.sleep(0.1)
             async with db.cursor() as cursor:
                 await cursor.execute("SELECT id, name, email, age FROM users WHERE age > ?", (40,))
                 results = await cursor.fetchall()
@@ -120,17 +124,17 @@ async def fetch_concurrently():
     # asyncio.gather takes coroutine objects (results of calling async functions).
     # It waits for all of them to complete and returns their results in the order
     # they were passed.
-    
+
     all_users_result, older_users_result = await asyncio.gather(
-        async_fetch_users(),      # Call the async function to get a coroutine
-        async_fetch_older_users() # Call the async function to get a coroutine
+        async_fetch_users(),       # Call the async function to get a coroutine
+        async_fetch_older_users()  # Call the async function to get a coroutine
     )
-    
+
     total_end_time = time.time()
     logging.info(f"fetch_concurrently: All concurrent fetches completed in {total_end_time - total_start_time:.4f} seconds.")
 
     print("\n--- Results from Concurrent Queries ---")
-    
+
     print("\nAll Users:")
     if all_users_result:
         for user in all_users_result:
@@ -148,7 +152,7 @@ async def fetch_concurrently():
 # --- Main execution block ---
 if __name__ == "__main__":
     db_file = 'users.db'
-    
+
     print("--- Setting up database ---")
     setup_db(db_file) # Synchronous setup for database preparation
     print("--- Database setup complete ---")

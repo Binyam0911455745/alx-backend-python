@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-Unit tests for access_nested_map and get_json functions from utils module.
+Unit tests for access_nested_map, get_json functions, and memoize decorator from utils module.
 """
 
 import unittest
 from unittest.mock import patch, Mock
 from parameterized import parameterized
-from utils import access_nested_map, get_json # Import get_json
-from typing import Dict, List, Any, Sequence, Callable, Mapping # Add these imports
-
+from utils import access_nested_map, get_json, memoize # Make sure memoize is imported
+from typing import Dict, List, Any, Sequence, Callable, Mapping # Crucial for resolving NameError: name 'Dict' is not defined
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -21,7 +20,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": {"b": 2}}, ("a",), {"b": 2}),
         ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, nested_map, path: Sequence expected_result:Any):
+    def test_access_nested_map(self, nested_map: Mapping, path: Sequence, expected_result: Any):
         """
         Tests that access_nested_map returns the expected result.
         """
@@ -31,7 +30,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({}, ("a",), "a"),
         ({"a": 1}, ("a", "b"), "b"),
     ])
-    def test_access_nested_map_exception(self, nested_map, path:  Sequence, expected_key: str):
+    def test_access_nested_map_exception(self, nested_map: Mapping, path: Sequence, expected_key: str):
         """
         Tests that access_nested_map raises a KeyError with the expected message.
         """
@@ -48,25 +47,53 @@ class TestGetJson(unittest.TestCase):
         ("http://example.com", {"payload": True}),
         ("http://holberton.io", {"payload": False}),
     ])
-    @patch('requests.get') # This patches requests.get for the duration of this test method
+    @patch('requests.get')
     def test_get_json(self, test_url: str, test_payload: Dict, mock_get: Mock):
         """
         Tests that get_json returns the expected result and mocks HTTP calls.
         """
-        # Configure the mock object:
-        # mock_get is a Mock object representing requests.get
-        # We want mock_get to return another Mock object when called
-        # This returned Mock object should have a .json() method
-        # The .json() method should return test_payload
         mock_get.return_value = Mock()
         mock_get.return_value.json.return_value = test_payload
 
-        # Call the function under test
         result = get_json(test_url)
 
-        # Assertions
-        # 1. Test that the mocked get method was called exactly once with test_url
         mock_get.assert_called_once_with(test_url)
-
-        # 2. Test that the output of get_json is equal to test_payload
         self.assertEqual(result, test_payload)
+
+
+class TestMemoize(unittest.TestCase):
+    """
+    Tests for the memoize decorator.
+    """
+    def test_memoize(self):
+        """
+        Tests that memoize caches the result of a method call.
+        """
+        class TestClass:
+            # We will patch this method
+            def a_method(self):
+                """A simple method that returns 42."""
+                return 42
+
+            @memoize # This will make a_property a memoized property
+            def a_property(self):
+                """A memoized property that calls a_method."""
+                return self.a_method()
+
+        # Patch 'a_method' inside 'TestClass'
+        with patch.object(TestClass, 'a_method', return_value=42) as mock_a_method:
+            test_instance = TestClass()
+
+            # Call a_property twice
+            # As per the task, calling it like a property (without ())
+            result1 = test_instance.a_property
+            result2 = test_instance.a_property
+
+            # Assertions
+            # 1. Test that a_method was called exactly once
+            mock_a_method.assert_called_once()
+
+            # 2. Test that the correct result is returned
+            self.assertEqual(result1, 42)
+            self.assertEqual(result2, 42)
+

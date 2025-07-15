@@ -7,6 +7,8 @@ import unittest
 from unittest.mock import patch, Mock
 from parameterized import parameterized
 from utils import access_nested_map, get_json # Import get_json
+from typing import Dict, List, Any, Sequence, Callable, Mapping # Add these imports
+
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -19,7 +21,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": {"b": 2}}, ("a",), {"b": 2}),
         ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, nested_map, path, expected_result):
+    def test_access_nested_map(self, nested_map, path: Sequence expected_result:Any):
         """
         Tests that access_nested_map returns the expected result.
         """
@@ -29,7 +31,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({}, ("a",), "a"),
         ({"a": 1}, ("a", "b"), "b"),
     ])
-    def test_access_nested_map_exception(self, nested_map, path, expected_key):
+    def test_access_nested_map_exception(self, nested_map, path:  Sequence, expected_key: str):
         """
         Tests that access_nested_map raises a KeyError with the expected message.
         """

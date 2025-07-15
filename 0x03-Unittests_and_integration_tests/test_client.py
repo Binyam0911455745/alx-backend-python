@@ -4,10 +4,10 @@ Unit tests for the client.GithubOrgClient class.
 """
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, PropertyMock # Import PropertyMock
 from parameterized import parameterized
-from client import GithubOrgClient # Assuming client.py is in the project root
-from typing import Dict, Any # Ensure Dict and Any are imported for type hints
+from client import GithubOrgClient
+from typing import Dict, Any
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -16,28 +16,49 @@ class TestGithubOrgClient(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("google", {"login": "google", "id": 123}), # Parametrized test case for 'google'
-        ("abc", {"login": "abc", "id": 456}),       # Parametrized test case for 'abc'
+        ("google", {"login": "google", "id": 123}),
+        ("abc", {"login": "abc", "id": 456}),
     ])
-    @patch('client.get_json')  # Patches 'get_json' from the 'client' module's namespace
+    @patch('client.get_json')
     def test_org(self, org_name: str, test_payload: Dict, mock_get_json: Mock):
         """
         Tests that GithubOrgClient.org returns the correct value.
         Mocks get_json to prevent external HTTP calls.
         """
-        # Configure the mock to return the predefined test_payload
         mock_get_json.return_value = test_payload
 
-        # Instantiate GithubOrgClient with the current parameterized org_name
         client = GithubOrgClient(org_name)
-
-        # Call the .org method of the client instance
         result = client.org()
 
-        # Assertions:
-        # 1. Verify that get_json was called exactly once with the expected URL
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
-
-        # 2. Verify that the output of GithubOrgClient.org matches the test_payload
         self.assertEqual(result, test_payload)
+
+    # New test method for Task 5
+    @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
+    def test_public_repos_url(self, mock_org: PropertyMock):
+        """
+        Tests that _public_repos_url returns the expected URL
+        based on a mocked GithubOrgClient.org property.
+        """
+        # Define the payload that the mocked .org property will return.
+        # It MUST contain the 'repos_url' key that _public_repos_url expects.
+        expected_repos_url = "https://api.github.com/users/octocat/repos"
+        test_org_payload = {"repos_url": expected_repos_url}
+        mock_org.return_value = test_org_payload
+
+        # Instantiate GithubOrgClient. The org_name passed to __init__
+        # doesn't directly matter here because GithubOrgClient.org is mocked.
+        client = GithubOrgClient("test_org")
+
+        # Access the _public_repos_url property.
+        # This will internally access the mocked self.org.
+        result = client._public_repos_url
+
+        # Assertions:
+        # 1. Verify that the .org property was accessed exactly once.
+        mock_org.assert_called_once()
+
+        # 2. Verify that the result from _public_repos_url matches
+        #    the expected URL from our mocked payload.
+        self.assertEqual(result, expected_repos_url)

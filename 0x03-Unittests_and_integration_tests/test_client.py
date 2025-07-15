@@ -56,13 +56,13 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_repos_url)
 
     @patch('client.get_json')
-    def test_public_repos(self, mock_get_json: Mock):  # Corrected E261
+    def test_public_repos(self, mock_get_json: Mock):
         """
         Tests GithubOrgClient.public_repos by mocking get_json and
         _public_repos_url. Verifies correct calls and returned data.
         """
         # 1. Define the payload that mock_get_json will return
-        #    This simulates the response from the GitHub API for repos
+        # This simulates the response from the GitHub API for repos
         test_repos_payload: List[Dict[str, Any]] = [
             {"name": "alx-backend", "license": {"key": "mit"}},
             {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
@@ -71,9 +71,11 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_get_json.return_value = test_repos_payload
 
         # 2. Define the URL that the mocked _public_repos_url property will return
-        #    This is the URL that public_repos will pass to get_json
-        # Corrected E501: line too long
-        expected_repos_api_url = "https://api.github.com/orgs/mock_org/repos"
+        # This is the URL that public_repos will pass to get_json
+        # Corrected E501: Line too long split
+        expected_repos_api_url = (
+            "https://api.github.com/orgs/mock_org/repos"
+        )
 
         # 3. Patch _public_repos_url as a context manager (it's a property)
         with patch('client.GithubOrgClient._public_repos_url',

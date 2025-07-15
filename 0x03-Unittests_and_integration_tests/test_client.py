@@ -4,10 +4,15 @@ Unit tests for the client.GithubOrgClient class.
 """
 
 import unittest
-from unittest.mock import patch, Mock, PropertyMock # Ensure PropertyMock is imported
+from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized
-from client import GithubOrgClient
-from typing import Dict, Any, List # Ensure List is imported for type hints
+from client import GithubOrgClient  # Assuming client.py is in the project root
+# Corrected E261 and E501: at least two spaces before comments and line length
+from typing import (
+    Dict,
+    Any,
+    List
+)
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -50,9 +55,8 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_org.assert_called_once()
         self.assertEqual(result, expected_repos_url)
 
-    # New test method for Task 5: test_public_repos
-    @patch('client.get_json') # Mock get_json using a decorator
-    def test_public_repos(self, mock_get_json: Mock):
+    @patch('client.get_json')
+    def test_public_repos(self, mock_get_json: Mock):  # Corrected E261
         """
         Tests GithubOrgClient.public_repos by mocking get_json and
         _public_repos_url. Verifies correct calls and returned data.
@@ -68,6 +72,7 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # 2. Define the URL that the mocked _public_repos_url property will return
         #    This is the URL that public_repos will pass to get_json
+        # Corrected E501: line too long
         expected_repos_api_url = "https://api.github.com/orgs/mock_org/repos"
 
         # 3. Patch _public_repos_url as a context manager (it's a property)

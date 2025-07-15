@@ -6,8 +6,7 @@ Unit tests for the client.GithubOrgClient class.
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized
-from client import GithubOrgClient  # Assuming client.py is in the project root
-# Corrected E261 and E501: at least two spaces before comments and line length
+from client import GithubOrgClient
 from typing import (
     Dict,
     Any,
@@ -61,8 +60,6 @@ class TestGithubOrgClient(unittest.TestCase):
         Tests GithubOrgClient.public_repos by mocking get_json and
         _public_repos_url. Verifies correct calls and returned data.
         """
-        # 1. Define the payload that mock_get_json will return
-        # This simulates the response from the GitHub API for repos
         test_repos_payload: List[Dict[str, Any]] = [
             {"name": "alx-backend", "license": {"key": "mit"}},
             {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
@@ -70,33 +67,43 @@ class TestGithubOrgClient(unittest.TestCase):
         ]
         mock_get_json.return_value = test_repos_payload
 
-        # 2. Define the URL that the mocked _public_repos_url property will return
-        # This is the URL that public_repos will pass to get_json
-        # Corrected E501: Line too long split
         expected_repos_api_url = (
             "https://api.github.com/orgs/mock_org/repos"
         )
 
-        # 3. Patch _public_repos_url as a context manager (it's a property)
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_public_repos_url:
             mock_public_repos_url.return_value = expected_repos_api_url
 
-            # Instantiate GithubOrgClient. The org_name passed to __init__
-            # doesn't directly affect this test since .org and
-            # _public_repos_url are being mocked.
             client = GithubOrgClient("mock_org")
-
-            # Call public_repos. Assuming it's a property or memoized property
-            # that internally calls _public_repos_url and then get_json.
             result = client.public_repos
 
-            # Assertions:
-            # 1. Test that the list of repos returned is what we expect
             self.assertEqual(result, test_repos_payload)
-
-            # 2. Test that _public_repos_url property was accessed once
             mock_public_repos_url.assert_called_once()
-
-            # 3. Test that get_json was called once with the expected API URL
             mock_get_json.assert_called_once_with(expected_repos_api_url)
+
+    # New test method for Task 7: test_has_license
+    @parameterized.expand([
+        # Test case 1: License matches
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        # Test case 2: License does not match
+        ({"license": {"key": "other_license"}}, "my_license", False),
+        # Test case 3: Repo has no license key
+        ({"license": {"key": "my_license"}}, "other_license", False),
+        # Test case 4: Repo has a license, but its value is None
+        ({"license": None}, "my_license", False),
+        # Test case 5: Repo has no "license" key at all
+        ({}, "my_license", False),
+        # Test case 6: More complex repo structure
+        ({"name": "test-repo", "license": {"key": "my_license", "name": "MIT"}},
+         "my_license", True),
+        # Test case 7: Empty license dict
+        ({"license": {}}, "my_license", False),
+    ])
+    def test_has_license(self, repo: Dict[str, Any], license_key: str, expected_result: bool):
+        """
+        Tests that GithubOrgClient.has_license returns the expected boolean value.
+        """
+        # Call the static method directly on the class
+        result = GithubOrgClient.has_license(repo, license_key)
+        self.assertEqual(result, expected_result)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Unit tests and integration tests for client.py.
+Unit and integration tests for the client module, specifically
+the GithubOrgClient class.
 """
 
 import unittest
@@ -12,8 +13,14 @@ from typing import (
     Any,
     List
 )
-# Import fixtures from accounts.fixtures
-from fixtures import ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS
+# Correctly import the fixtures from the provided fixtures.py file
+# fixtures.py contains a list of tuples, so we access them like this.
+# Assuming the structure of fixtures.py is like:
+# FIXTURES = [
+#     (org_payload_1, repos_payload_1, expected_repos_1, apache2_repos_1),
+#     (org_payload_2, repos_payload_2, expected_repos_2, apache2_repos_2),
+# ]
+from fixtures import FIXTURES
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -22,12 +29,10 @@ class TestGithubOrgClient(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("google",),  # Parametrized test case for 'google' org
-        ("abc",),     # Parametrized test case for 'abc' org
+        ("google",),
+        ("abc",),
     ])
-    @patch(
-        'client.get_json'
-    )  # Patch 'get_json' where it's imported in client.py
+    @patch('client.get_json')
     def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
@@ -46,7 +51,7 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_get_json.assert_called_once_with(expected_url)
         self.assertEqual(result, expected_payload)
 
-    def test_public_repos_url(self):
+    def test_public_repos_url(self) -> None:
         """
         Tests that _public_repos_url returns the expected URL
         based on a mocked GithubOrgClient.org property using
@@ -106,8 +111,8 @@ class TestGithubOrgClient(unittest.TestCase):
             # Assertions
             # The expected list of repos (only names)
             # based on our test_payload
-            expected_repos = ["alx-backend", "alx-frontend", "alx-devops"]
-            self.assertEqual(repos, expected_repos)
+            expected_repos_names = ["alx-backend", "alx-frontend", "alx-devops"]
+            self.assertEqual(repos, expected_repos_names)
 
             # Verify that the mocked _public_repos_url property was accessed
             # exactly once
@@ -131,7 +136,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {}}, "my_license", False),
     ])
     def test_has_license(self, repo: Dict[str, Any],
-                         license_key: str, expected_result: bool):
+                         license_key: str, expected_result: bool) -> None:
         """
         Tests that GithubOrgClient.has_license returns the
         expected boolean value.
@@ -140,21 +145,14 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
 
-@parameterized_class([
-    {
-        "org_payload": ORG_PAYLOAD,
-        "repos_payload": REPOS_PAYLOAD,
-        "expected_repos": EXPECTED_REPOS,
-        "apache2_repos": APACHE2_REPOS,
-    },
-])
+@parameterized_class(FIXTURES) # Correctly use FIXTURES from the import
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """
     Integration tests for GithubOrgClient.public_repos.
     Mocks external HTTP requests using requests.get.
     """
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         """
         Set up class-level mocks for requests.get.
         This will intercept all calls to requests.get made by utils.get_json.
@@ -173,6 +171,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Start patching 'requests.get'.
         # The 'side_effect' list provides responses sequentially.
+        # This patch needs to be started and stopped correctly.
         cls.get_patcher = patch(
             'requests.get',
             side_effect=[mock_org_response, mock_repos_response]
@@ -180,13 +179,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.mock_get = cls.get_patcher.start()
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         """
         Stop the patcher after all tests in this class have run.
         """
         cls.get_patcher.stop()
 
-    def test_public_repos(self):
+    def test_public_repos(self) -> None:
         """
         Tests GithubOrgClient.public_repos in an integration context.
         """
@@ -196,17 +195,21 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         self.assertEqual(self.mock_get.call_count, 2)
 
+        # Check call arguments for each call to requests.get
         expected_org_url = "https://api.github.com/orgs/google"
-        self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
+        # .call_args_list returns a list of call objects.
+        # Each call object has .args (tuple of positional args) and .kwargs (dict of keyword args)
+        self.assertEqual(self.mock_get.call_args_list[0].args[0], expected_org_url)
 
+        # The repos_url comes from the org_payload, which is a class attribute in parameterized_class
         expected_repos_url = self.org_payload["repos_url"]
-        self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)
+        self.assertEqual(self.mock_get.call_args_list[1].args[0], expected_repos_url)
 
         # Extract names from actual_repos based on the fixture structure
-        extracted_names = [repo["name"] for repo in actual_repos]
-        self.assertEqual(extracted_names, self.expected_repos)
+        # The public_repos method should return only the names, not the full repo dicts.
+        self.assertEqual(actual_repos, self.expected_repos)
 
-    def test_public_repos_with_license(self):
+    def test_public_repos_with_license(self) -> None:
         """
         Tests the public_repos method with a license filter.
         """
@@ -214,13 +217,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         # Ensure public_repos is called as a method
         actual_repos = client.public_repos("apache-2.0")
 
-        # Extract names from actual_repos based on the fixture structure
-        extracted_names = [repo["name"] for repo in actual_repos]
-        self.assertEqual(extracted_names, self.apache2_repos)
+        # The public_repos method with a license filter should return names.
+        self.assertEqual(actual_repos, self.apache2_repos)
         self.assertEqual(self.mock_get.call_count, 2)  # Should still be 2 calls
 
+        # Verify call arguments
         expected_org_url = "https://api.github.com/orgs/google"
-        self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
+        self.assertEqual(self.mock_get.call_args_list[0].args[0], expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
-        self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)
+        self.assertEqual(self.mock_get.call_args_list[1].args[0], expected_repos_url)

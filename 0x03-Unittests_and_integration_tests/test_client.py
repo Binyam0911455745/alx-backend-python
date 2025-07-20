@@ -169,7 +169,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         Tests GithubOrgClient.public_repos in an integration context.
         """
         client = GithubOrgClient("google")
-        actual_repos = client.public_repos() # public_repos is a method now
+        # Ensure public_repos is called as a method
+        actual_repos = client.public_repos()
 
         self.assertEqual(self.mock_get.call_count, 2)
 
@@ -188,6 +189,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         Tests the public_repos method with a license filter.
         """
         client = GithubOrgClient("google")
+        # Ensure public_repos is called as a method
         actual_repos = client.public_repos("apache-2.0")
 
         # Extract names from actual_repos based on the fixture structure

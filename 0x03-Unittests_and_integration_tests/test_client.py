@@ -88,13 +88,17 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # Mock the _public_repos_url property using patch as a context manager
         # PropertyMock is essential for mocking properties
-        with patch('client.GithubOrgClient._public_repos_url', new_callable=PropertyMock) as mock_public_repos_url:
+        with patch('client.GithubOrgClient._public_repos_url',
+                   new_callable=PropertyMock) as mock_public_repos_url:
             # Set the return value for the mocked property
-            mock_public_repos_url.return_value = "https://api.github.com/orgs/some_org/repos"
+            mock_public_repos_url.return_value = (
+                "https://api.github.com/orgs/some_org/repos"
+            )
 
             # Create an instance of GithubOrgClient
-            # The 'org' argument here is just a placeholder, as the actual API call
-            # for the organization's data is bypassed by the _public_repos_url mock.
+            # The 'org' argument here is just a placeholder, as the actual API
+            # call for the organization's data is bypassed by the
+            # _public_repos_url mock.
             test_client = GithubOrgClient("holberton")
 
             # Call the method under test
@@ -105,12 +109,15 @@ class TestGithubOrgClient(unittest.TestCase):
             expected_repos = ["alx-backend", "alx-frontend", "alx-devops"]
             self.assertEqual(repos, expected_repos)
 
-            # Verify that the mocked _public_repos_url property was accessed exactly once
+            # Verify that the mocked _public_repos_url property was accessed
+            # exactly once
             mock_public_repos_url.assert_called_once()
 
             # Verify that the mocked get_json method was called exactly once
             # with the URL returned by the _public_repos_url mock
-            mock_get_json.assert_called_once_with("https://api.github.com/orgs/some_org/repos")
+            mock_get_json.assert_called_once_with(
+                "https://api.github.com/orgs/some_org/repos"
+            )
 
     @parameterized.expand([
         ({"license": {"key": "my_license"}}, "my_license", True),
@@ -166,9 +173,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Start patching 'requests.get'.
         # The 'side_effect' list provides responses sequentially.
-        cls.get_patcher = patch('requests.get',
-                                side_effect=[mock_org_response,
-                                             mock_repos_response])
+        cls.get_patcher = patch(
+            'requests.get',
+            side_effect=[mock_org_response, mock_repos_response]
+        )
         cls.mock_get = cls.get_patcher.start()
 
     @classmethod

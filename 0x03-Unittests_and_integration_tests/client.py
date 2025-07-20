@@ -5,6 +5,7 @@ A client for interacting with the GitHub API.
 
 import requests
 from typing import Dict, List, Any
+from utils import get_json
 
 class GithubOrgClient:
     """
@@ -34,3 +35,13 @@ class GithubOrgClient:
         if "license" not in repo or repo["license"] is None:
             return False
         return repo["license"]["key"] == license_key
+    def org(self) -> dict:
+        """
+        Returns the organization's public information.
+        This method makes an API call to get_json.
+        """
+        org_url = f"https://api.github.com/orgs/{self._org_name}"
+        return get_json(org_url)
+
+    # Note: Other methods like repos_url, public_repos, has_public_repo
+    # will be added in later tasks if required.

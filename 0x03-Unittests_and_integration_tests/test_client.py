@@ -22,23 +22,34 @@ class TestGithubOrgClient(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("google", {"login": "google", "id": 123}),
-        ("abc", {"login": "abc", "id": 456}),
+        ("google",), # Parametrized test case for 'google' org
+        ("abc",),    # Parametrized test case for 'abc' org
     ])
-    @patch('client.get_json')
-    def test_org(self, org_name: str, test_payload: Dict, mock_get_json: Mock):
+    @patch('client.get_json') # Patch 'get_json' from where it's imported in 'client.py'
+    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
-        Tests that GithubOrgClient.org returns the correct value.
-        Mocks get_json to prevent external HTTP calls.
+        Test that GithubOrgClient.org returns the correct value.
+        It uses @patch to mock get_json and ensures it's called
+        once with the expected argument but not executed.
         """
-        mock_get_json.return_value = test_payload
+        # Define the expected payload that mock_get_json should return
+        expected_payload = {"login": org_name, "id": 123, "repos_url": f"https://api.github.com/orgs/{org_name}/repos"}
+        mock_get_json.return_value = expected_payload
 
+        # Create an instance of GithubOrgClient with the current org_name
         client = GithubOrgClient(org_name)
+
+        # Call the org method, which internally calls get_json
         result = client.org()
 
+        # Assertions
+        # 1. Assert that get_json was called exactly once with the expected URL
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
-        self.assertEqual(result, test_payload)
+
+        # 2. Assert that the result returned by client.org() matches the expected payload
+        self.assertEqual(result, expected_payload)
+
 
     @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
     def test_public_repos_url(self, mock_org: PropertyMock):

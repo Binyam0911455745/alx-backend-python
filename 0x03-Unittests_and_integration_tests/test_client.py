@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+import client # Added to correctly patch requests.get
 from typing import (
     Dict,
     Any,
@@ -38,8 +39,8 @@ class TestGithubOrgClient(unittest.TestCase):
         }
         mock_get_json.return_value = expected_payload
 
-        client = GithubOrgClient(org_name)
-        result = client.org()
+        client_instance = GithubOrgClient(org_name)
+        result = client_instance.org()
 
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
@@ -58,8 +59,8 @@ class TestGithubOrgClient(unittest.TestCase):
                    new_callable=PropertyMock) as mock_org:
             mock_org.return_value = test_org_payload
 
-            client = GithubOrgClient("test_org")
-            result = client._public_repos_url  # Access the property
+            client_instance = GithubOrgClient("test_org")
+            result = client_instance._public_repos_url  # Access the property
 
             # Assertions
             mock_org.assert_called_once()
@@ -96,10 +97,10 @@ class TestGithubOrgClient(unittest.TestCase):
             # The 'org' argument here is just a placeholder, as the actual API
             # call for the organization's data is bypassed by the
             # _public_repos_url mock.
-            test_client = GithubOrgClient("holberton")
+            test_client_instance = GithubOrgClient("holberton")
 
             # Call the method under test
-            repos = test_client.public_repos()
+            repos = test_client_instance.public_repos()
 
             # Assertions
             # The expected list of repos (only names) based on our test_payload
@@ -163,10 +164,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         mock_repos_response.raise_for_status.return_value = None
 
         # Start patching 'requests.get'.
-        # The 'side_effect' list provides responses sequentially.
-        # Ensure the side_effect order matches the call order in public_repos
+        # The target for patching requests.get should be where it's
+        # looked up in the client module, typically 'client.requests.get'.
         cls.get_patcher = patch(
-            'requests.get',
+            'client.requests.get', # Changed patch target
             side_effect=[mock_org_response, mock_repos_response]
         )
         cls.mock_get = cls.get_patcher.start()
@@ -182,9 +183,9 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         """
         Tests GithubOrgClient.public_repos in an integration context.
         """
-        client = GithubOrgClient("google")
+        client_instance = GithubOrgClient("google")
         # Ensure public_repos is called as a method
-        actual_repos = client.public_repos()
+        actual_repos = client_instance.public_repos()
 
         # Check that requests.get was called twice
         self.assertEqual(self.mock_get.call_count, 2)
@@ -206,9 +207,9 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         """
         Tests the public_repos method with a license filter.
         """
-        client = GithubOrgClient("google")
+        client_instance = GithubOrgClient("google")
         # Ensure public_repos is called as a method
-        actual_repos = client.public_repos("apache-2.0")
+        actual_repos = client_instance.public_repos("apache-2.0")
 
         # The public_repos method with a license filter should return names.
         self.assertEqual(actual_repos, self.apache2_repos)

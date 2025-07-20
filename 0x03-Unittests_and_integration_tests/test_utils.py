@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Unit tests for access_nested_map, get_json functions, and memoize decorator from utils module.
+Unit tests for access_nested_map, get_json functions,
+and memoize decorator from utils module.
 """
 
 import unittest
@@ -20,7 +21,8 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": {"b": 2}}, ("a",), {"b": 2}),
         ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, nested_map: Mapping, path: Sequence, expected_result: Any):
+    def test_access_nested_map(self, nested_map: Mapping, path: Sequence,
+                               expected_result: Any):
         """
         Tests that access_nested_map returns the expected result.
         """
@@ -30,9 +32,11 @@ class TestAccessNestedMap(unittest.TestCase):
         ({}, ("a",), "a"),
         ({"a": 1}, ("a", "b"), "b"),
     ])
-    def test_access_nested_map_exception(self, nested_map: Mapping, path: Sequence, expected_key: str):
+    def test_access_nested_map_exception(self, nested_map: Mapping,
+                                         path: Sequence, expected_key: str):
         """
-        Tests that access_nested_map raises a KeyError with the expected message.
+        Tests that access_nested_map raises a KeyError
+        with the expected message.
         """
         with self.assertRaisesRegex(KeyError, f"'{expected_key}'"):
             access_nested_map(nested_map, path)
@@ -50,10 +54,12 @@ class TestGetJson(unittest.TestCase):
     @patch('requests.get')
     def test_get_json(self, test_url: str, test_payload: Dict, mock_get: Mock):
         """
-        Tests that get_json returns the expected result and mocks HTTP calls.
+        Tests that get_json returns the expected result
+        and mocks HTTP calls.
         """
         mock_get.return_value = Mock()
-        mock_get.return_value.json.return_value = test_payload
+        mock_get.return_value.json.return_value = \
+            test_payload
 
         result = get_json(test_url)
 
@@ -69,14 +75,13 @@ class TestMemoize(unittest.TestCase):
         """
         Tests that memoize caches the result of a method call.
         """
-        class TestClass:
-            """A simple class for testing memoization."""
+        class TestClass:  # A simple class for testing memoization.
             # This is the method we will mock/patch
             def a_method(self) -> int:
                 """A simple method that returns 42."""
                 return 42
 
-            @memoize # This applies the memoize decorator
+            @memoize  # This applies the memoize decorator
             def a_property(self) -> int:
                 """A memoized property that calls a_method."""
                 return self.a_method()
@@ -89,10 +94,11 @@ class TestMemoize(unittest.TestCase):
         # 2. Patch 'a_method' specifically ON THAT INSTANCE (test_instance).
         #    This ensures that when test_instance.a_method() is called by a_property,
         #    the mock intercepts it.
-        with patch.object(test_instance, 'a_method', return_value=42) as mock_a_method:
+        with patch.object(test_instance, 'a_method', return_value=42) as \
+                mock_a_method:  # Line wrapped for E501
             # 3. Access the memoized property twice.
-            #    The first access should call 'a_method' (which is mocked).
-            #    The second access should retrieve the cached value without calling 'a_method' again.
+            #    The first access should call 'a_method' (mocked).
+            #    The second access should retrieve the cached value.
             result1 = test_instance.a_property
             result2 = test_instance.a_property
 
@@ -100,7 +106,23 @@ class TestMemoize(unittest.TestCase):
             #    Verify that the mocked 'a_method' was called exactly once.
             mock_a_method.assert_called_once()
 
-            #    Verify that the memoized property returned the correct result both times.
+            #    Verify that the memoized property returned the correct result.
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
         # --- END OF CRITICAL SECTION ---
+    ```
+
+**Action:**
+1.  **Replace the entire content of your `test_utils.py` file with the code block above.**
+2.  **SAVE THE FILE.**
+3.  **Run the pycodestyle checker again** to confirm all errors are gone.
+    ```bash
+    python3 -m pycodestyle test_utils.py
+    ```
+    (Or whatever command your checker uses, often `pep8` or `pycodestyle` directly).
+4.  If the checker reports no errors, **run your unit tests again** to ensure everything still passes logically:
+    ```bash
+    ./venv/Scripts/python.exe -m unittest test_utils.py
+    ```
+
+This should resolve all the style issues and confirm your tests are passing!

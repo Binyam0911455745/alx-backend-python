@@ -7,7 +7,7 @@ the GithubOrgClient class.
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized, parameterized_class
-from client import GithubOrgClient, get_json # Import get_json too, if it's in client.py
+from client import GithubOrgClient, get_json # Ensure get_json is imported from client
 from typing import (
     Dict,
     Any,
@@ -124,32 +124,32 @@ class TestGithubOrgClient(unittest.TestCase):
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """
     Integration tests for GithubOrgClient.public_repos.
-    Mocks external HTTP requests using requests.get.
+    Mocks external HTTP requests using requests.get (via get_json).
     """
     @classmethod
     def setUpClass(cls) -> None:
         """
-        Set up class-level mocks for requests.get.
-        This will intercept all calls to requests.get made by get_json
-        which is used by GithubOrgClient.
+        Set up class-level mocks for the `get_json` function.
+        This will intercept all calls to `get_json` made by `GithubOrgClient`.
         """
-        # Create a mock for the first call to requests.get (for org payload)
-        mock_org_response = Mock()
-        mock_org_response.json.return_value = cls.org_payload
-        mock_org_response.raise_for_status.return_value = None
+        # Create mock response objects for the two expected calls
+        # to get_json:
+        # 1. For the organization payload (from client.org)
+        # 2. For the repositories payload (from client.public_repos)
+        # Note: get_json returns the .json() value directly, not a Response object
+        side_effects_list = [
+            cls.org_payload,    # First call to get_json (for org)
+            cls.repos_payload   # Second call to get_json (for repos)
+        ]
 
-        # Create a mock for the second call to requests.get (for repos payload)
-        mock_repos_response = Mock()
-        mock_repos_response.json.return_value = cls.repos_payload
-        mock_repos_response.raise_for_status.return_value = None
-
-        # Patch `requests.get` directly in the `client` module where it's used
-        # This is the most common and robust way for ALX projects.
+        # Patch `get_json` directly in the `client` module where it's used.
+        # This is generally more robust for integration tests when
+        # get_json is the actual network fetching function.
         cls.get_patcher = patch(
-            'client.requests.get',  # Assumes `client.py` has `import requests`
-            side_effect=[mock_org_response, mock_repos_response]
+            'client.get_json',  # Patching the get_json function itself
+            side_effect=side_effects_list
         )
-        cls.mock_get = cls.get_patcher.start()
+        cls.mock_get_json = cls.get_patcher.start() # Rename mock to be explicit
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -165,14 +165,16 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         client_instance = GithubOrgClient("google")
         actual_repos = client_instance.public_repos()
 
-        self.assertEqual(self.mock_get.call_count, 2)
+        # Check that get_json was called twice
+        self.assertEqual(self.mock_get_json.call_count, 2)
 
+        # Check call arguments for each call to get_json
         expected_org_url = "https://api.github.com/orgs/google"
-        self.assertEqual(self.mock_get.call_args_list[0].args[0],
+        self.assertEqual(self.mock_get_json.call_args_list[0].args[0],
                          expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
-        self.assertEqual(self.mock_get.call_args_list[1].args[0],
+        self.assertEqual(self.mock_get_json.call_args_list[1].args[0],
                          expected_repos_url)
 
         self.assertEqual(actual_repos, self.expected_repos)
@@ -185,12 +187,12 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         actual_repos = client_instance.public_repos("apache-2.0")
 
         self.assertEqual(actual_repos, self.apache2_repos)
-        self.assertEqual(self.mock_get.call_count, 2)
+        self.assertEqual(self.mock_get_json.call_count, 2) # Still 2 calls to get_json
 
         expected_org_url = "https://api.github.com/orgs/google"
-        self.assertEqual(self.mock_get.call_args_list[0].args[0],
+        self.assertEqual(self.mock_get_json.call_args_list[0].args[0],
                          expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
-        self.assertEqual(self.mock_get.call_args_list[1].args[0],
+        self.assertEqual(self.mock_get_json.call_args_list[1].args[0],
                          expected_repos_url)

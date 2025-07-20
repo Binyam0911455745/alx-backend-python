@@ -443,47 +443,4 @@ REPOS_PAYLOAD = [
                            "closure-compiler/deployments",
         "created_at": "2013-10-09T03:08:48Z",
         "updated_at": "2024-07-16T09:42:32Z",
-        "pushed_at": "2024-07-16T14:48:08Z",
-        "git_url": "git://github.com/google/closure-compiler.git",
-        "ssh_url": "git@github.com:google/closure-compiler.git",
-        "clone_url": "https://github.com/google/closure-compiler.git",
-        "svn_url": "https://github.com/google/closure-compiler",
-        "homepage": "https://developers.google.com/closure/compiler",
-        "size": 55193,
-        "stargazers_count": 5971,
-        "watchers_count": 5971,
-        "language": "Java",
-        "has_issues": True,
-        "has_projects": True,
-        "has_downloads": True,
-        "has_wiki": True,
-        "has_pages": True,
-        "has_discussions": False,
-        "forks_count": 894,
-        "mirror_url": None,
-        "archived": False,
-        "disabled": False,
-        "open_issues_count": 142,
-        "license": {"key": "other", "name": "Other License"}, # No apache-2.0
-        "allow_forking": True,
-        "is_template": False,
-        "web_commit_signoff_required": False,
-        "topics": ["javascript", "compiler"],
-        "visibility": "public",
-        "forks": 894,
-        "open_issues": 142,
-        "watchers": 5971,
-        "default_branch": "master",
-        "temp_clone_token": None,
-        "network_count": 894,
-        "subscribers_count": 272
-    }
-]
-
-EXPECTED_REPOS = ["gocv", "guava", "closure-compiler"]
-
-APACHE2_REPOS = ["gocv", "guava"]
-
-FIXTURES = [
-    (ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS),
-]
+        "pushed_at": "2024

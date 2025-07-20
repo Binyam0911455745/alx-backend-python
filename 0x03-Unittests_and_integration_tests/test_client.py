@@ -13,7 +13,7 @@ from typing import (
     List
 )
 # Import fixtures from the fixtures.py file you just created
-from accounts.fixtures import ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS
+#from accounts.fixtures import ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS
 
 
 class TestGithubOrgClient(unittest.TestCase):

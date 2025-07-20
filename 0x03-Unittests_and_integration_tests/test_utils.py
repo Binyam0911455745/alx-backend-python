@@ -48,8 +48,8 @@ class TestGetJson(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("http://example.com", {"payload": True}),
-        ("http://holberton.io", {"payload": False}),
+        ("[http://example.com](http://example.com)", {"payload": True}),
+        ("[http://holberton.io](http://holberton.io)", {"payload": False}),
     ])
     @patch('requests.get')
     def test_get_json(self, test_url: str, test_payload: Dict, mock_get: Mock):
@@ -86,43 +86,22 @@ class TestMemoize(unittest.TestCase):
                 """A memoized property that calls a_method."""
                 return self.a_method()
 
-        # --- START OF CRITICAL SECTION ---
         # 1. Create the instance of TestClass FIRST.
-        #    This instance will be the one whose 'a_method' we want to mock.
         test_instance = TestClass()
 
         # 2. Patch 'a_method' specifically ON THAT INSTANCE (test_instance).
-        #    This ensures that when test_instance.a_method() is called by a_property,
-        #    the mock intercepts it.
         with patch.object(test_instance, 'a_method', return_value=42) as \
-                mock_a_method:  # Line wrapped for E501
+                mock_a_method:
             # 3. Access the memoized property twice.
-            #    The first access should call 'a_method' (mocked).
-            #    The second access should retrieve the cached value.
+            # The first access should call 'a_method' (mocked).
+            # The second access should retrieve the cached value.
             result1 = test_instance.a_property
             result2 = test_instance.a_property
 
             # 4. Assertions:
-            #    Verify that the mocked 'a_method' was called exactly once.
+            # Verify that the mocked 'a_method' was called exactly once.
             mock_a_method.assert_called_once()
 
-            #    Verify that the memoized property returned the correct result.
+            # Verify that the memoized property returned the correct result.
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
-        # --- END OF CRITICAL SECTION ---
-    ```
-
-**Action:**
-1.  **Replace the entire content of your `test_utils.py` file with the code block above.**
-2.  **SAVE THE FILE.**
-3.  **Run the pycodestyle checker again** to confirm all errors are gone.
-    ```bash
-    python3 -m pycodestyle test_utils.py
-    ```
-    (Or whatever command your checker uses, often `pep8` or `pycodestyle` directly).
-4.  If the checker reports no errors, **run your unit tests again** to ensure everything still passes logically:
-    ```bash
-    ./venv/Scripts/python.exe -m unittest test_utils.py
-    ```
-
-This should resolve all the style issues and confirm your tests are passing!

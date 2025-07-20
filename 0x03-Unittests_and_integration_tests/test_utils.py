@@ -6,8 +6,8 @@ Unit tests for access_nested_map, get_json functions, and memoize decorator from
 import unittest
 from unittest.mock import patch, Mock
 from parameterized import parameterized
-from utils import access_nested_map, get_json, memoize # Make sure memoize is imported
-from typing import Dict, List, Any, Sequence, Callable, Mapping # Crucial for resolving NameError: name 'Dict' is not defined
+from utils import access_nested_map, get_json, memoize
+from typing import Dict, List, Any, Sequence, Callable, Mapping
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -65,35 +65,42 @@ class TestMemoize(unittest.TestCase):
     """
     Tests for the memoize decorator.
     """
-    def test_memoize(self):
+    def test_memoize(self) -> None:
         """
         Tests that memoize caches the result of a method call.
         """
         class TestClass:
-            # We will patch this method
-            def a_method(self):
+            """A simple class for testing memoization."""
+            # This is the method we will mock/patch
+            def a_method(self) -> int:
                 """A simple method that returns 42."""
                 return 42
 
-            @memoize # This will make a_property a memoized property
-            def a_property(self):
+            @memoize # This applies the memoize decorator
+            def a_property(self) -> int:
                 """A memoized property that calls a_method."""
                 return self.a_method()
 
-        # Patch 'a_method' inside 'TestClass'
-        with patch.object(TestClass, 'a_method', return_value=42) as mock_a_method:
-            test_instance = TestClass()
+        # --- START OF CRITICAL SECTION ---
+        # 1. Create the instance of TestClass FIRST.
+        #    This instance will be the one whose 'a_method' we want to mock.
+        test_instance = TestClass()
 
-            # Call a_property twice
-            # As per the task, calling it like a property (without ())
+        # 2. Patch 'a_method' specifically ON THAT INSTANCE (test_instance).
+        #    This ensures that when test_instance.a_method() is called by a_property,
+        #    the mock intercepts it.
+        with patch.object(test_instance, 'a_method', return_value=42) as mock_a_method:
+            # 3. Access the memoized property twice.
+            #    The first access should call 'a_method' (which is mocked).
+            #    The second access should retrieve the cached value without calling 'a_method' again.
             result1 = test_instance.a_property
             result2 = test_instance.a_property
 
-            # Assertions
-            # 1. Test that a_method was called exactly once
+            # 4. Assertions:
+            #    Verify that the mocked 'a_method' was called exactly once.
             mock_a_method.assert_called_once()
 
-            # 2. Test that the correct result is returned
+            #    Verify that the memoized property returned the correct result both times.
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
-
+        # --- END OF CRITICAL SECTION ---

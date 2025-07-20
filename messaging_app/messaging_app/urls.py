@@ -29,4 +29,5 @@ urlpatterns = [
     # path('api/conversations/<uuid:conversation_pk>/messages/<uuid:pk>/',
     #      views.MessageViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
     #      name='message-detail'),
+    path('api-auth/', include('rest_framework.urls')),
 ]

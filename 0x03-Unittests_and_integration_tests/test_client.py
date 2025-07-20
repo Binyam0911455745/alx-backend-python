@@ -89,7 +89,6 @@ class TestGithubOrgClient(unittest.TestCase):
         expected_repos_api_url = \
             "https://api.github.com/orgs/mock_org/repos"
 
-        # Mock _public_repos_url as a context manager
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_public_repos_url:
             mock_public_repos_url.return_value = expected_repos_api_url
@@ -97,7 +96,6 @@ class TestGithubOrgClient(unittest.TestCase):
             client = GithubOrgClient("mock_org")
             result = client.public_repos
 
-            # Assertions as per Task 6 requirements
             self.assertEqual(result, test_repos_payload)
             mock_public_repos_url.assert_called_once()
             mock_get_json.assert_called_once_with(expected_repos_api_url)

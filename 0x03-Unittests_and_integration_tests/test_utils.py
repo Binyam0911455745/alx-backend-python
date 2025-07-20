@@ -104,4 +104,4 @@ class TestMemoize(unittest.TestCase):
 
             # Verify that the memoized property returned the correct result.
             self.assertEqual(result1, 42)
-            self.assertEqual(result2, 42)
+            self.assertEqual(result2, 42)|

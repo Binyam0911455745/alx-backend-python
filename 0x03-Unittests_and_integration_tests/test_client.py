@@ -104,7 +104,7 @@ class TestGithubOrgClient(unittest.TestCase):
             # Assertions
             # The expected list of repos (only names) based on our test_payload
             expected_repos_names = ["alx-backend", "alx-frontend",
-                                    "alx-devops"]  # E501 fix
+                                    "alx-devops"]
             self.assertEqual(repos, expected_repos_names)
 
             # Verify that the mocked _public_repos_url property was accessed
@@ -218,5 +218,6 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
                          expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
+        # E501 fix: Split the line
         self.assertEqual(self.mock_get.call_args_list[1].args[0],
                          expected_repos_url)

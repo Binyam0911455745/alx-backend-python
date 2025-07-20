@@ -123,7 +123,8 @@ REPOS_PAYLOAD = [
                          "downloads",
         "issues_url": "https://api.github.com/repos/google/gocv/issues{"
                       "/number}",
-        "pulls_url": "https://api.github.com/repos/google/gocv/pulls{"
+        "pulls_url": "https://api.github.com/repos/google/gocv/"
+                     "pulls{"
                      "/number}",
         "milestones_url": "https://api.github.com/repos/google/gocv/"
                           "milestones{/number}",

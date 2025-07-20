@@ -138,7 +138,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
 
-@parameterized_class(FIXTURES)  # Use the correctly imported FIXTURES
+@parameterized_class(FIXTURES)
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """
     Integration tests for GithubOrgClient.public_repos.
@@ -164,6 +164,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Start patching 'requests.get'.
         # The 'side_effect' list provides responses sequentially.
+        # Ensure the side_effect order matches the call order in public_repos
         cls.get_patcher = patch(
             'requests.get',
             side_effect=[mock_org_response, mock_repos_response]
@@ -185,6 +186,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         # Ensure public_repos is called as a method
         actual_repos = client.public_repos()
 
+        # Check that requests.get was called twice
         self.assertEqual(self.mock_get.call_count, 2)
 
         # Check call arguments for each call to requests.get
@@ -210,14 +212,14 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # The public_repos method with a license filter should return names.
         self.assertEqual(actual_repos, self.apache2_repos)
-        self.assertEqual(self.mock_get.call_count, 2)  # Should still be 2 calls
+        # Should still be 2 calls to requests.get even with license filter
+        self.assertEqual(self.mock_get.call_count, 2)
 
-        # Verify call arguments
+        # Verify call arguments (same as without license filter)
         expected_org_url = "https://api.github.com/orgs/google"
         self.assertEqual(self.mock_get.call_args_list[0].args[0],
                          expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
-        # E501 fix: Split the line
         self.assertEqual(self.mock_get.call_args_list[1].args[0],
                          expected_repos_url)

@@ -51,21 +51,26 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_payload)
 
 
-    @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
-    def test_public_repos_url(self, mock_org: PropertyMock):
+    # MODIFIED: Refactored to use patch as a context manager
+    def test_public_repos_url(self):
         """
         Tests that _public_repos_url returns the expected URL
-        based on a mocked GithubOrgClient.org property.
+        based on a mocked GithubOrgClient.org property using
+        patch as a context manager.
         """
         expected_repos_url = "https://api.github.com/users/octocat/repos"
         test_org_payload = {"repos_url": expected_repos_url}
-        mock_org.return_value = test_org_payload
 
-        client = GithubOrgClient("test_org")
-        result = client._public_repos_url
+        # Use patch as a context manager
+        with patch('client.GithubOrgClient.org', new_callable=PropertyMock) as mock_org:
+            mock_org.return_value = test_org_payload
 
-        mock_org.assert_called_once()
-        self.assertEqual(result, expected_repos_url)
+            client = GithubOrgClient("test_org")
+            result = client._public_repos_url # Access the property
+
+            # Assertions
+            mock_org.assert_called_once()
+            self.assertEqual(result, expected_repos_url)
 
     @patch('client.get_json')
     def test_public_repos(self, mock_get_json: Mock):

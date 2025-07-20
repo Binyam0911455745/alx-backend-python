@@ -12,11 +12,8 @@ from typing import (
     Any,
     List
 )
-
-# Note: Import fixtures from accounts.fixtures will be added in later
-# tasks. Ensure this line is commented out if it's present:
-# # from accounts.fixtures import ORG_PAYLOAD, REPOS_PAYLOAD,
-# # EXPECTED_REPOS, APACHE2_REPOS
+# Import fixtures from accounts.fixtures
+from fixtures import ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -122,84 +119,84 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
 
-# The following integration test class should remain commented out
-# until you explicitly work on tasks that require it (e.g., Task 7)
+@parameterized_class([
+    {
+        "org_payload": ORG_PAYLOAD,
+        "repos_payload": REPOS_PAYLOAD,
+        "expected_repos": EXPECTED_REPOS,
+        "apache2_repos": APACHE2_REPOS,
+    },
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """
+    Integration tests for GithubOrgClient.public_repos.
+    Mocks external HTTP requests using requests.get.
+    """
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set up class-level mocks for requests.get.
+        This will intercept all calls to requests.get made by utils.get_json.
+        """
+        # Create mock response objects for the two expected calls
+        # to requests.get:
+        # 1. For the organization payload (from client.org)
+        mock_org_response = Mock()
+        mock_org_response.json.return_value = cls.org_payload
+        mock_org_response.raise_for_status.return_value = None
 
-# @parameterized_class([
-#     {
-#         "org_payload": ORG_PAYLOAD,
-#         "repos_payload": REPOS_PAYLOAD,
-#         "expected_repos": EXPECTED_REPOS,
-#         "apache2_repos": APACHE2_REPOS,
-#     },
-# ])
-# class TestIntegrationGithubOrgClient(unittest.TestCase):
-#     """
-#     Integration tests for GithubOrgClient.public_repos.
-#     Mocks external HTTP requests using requests.get.
-#     """
-#     @classmethod
-#     def setUpClass(cls):
-#         """
-#         Set up class-level mocks for requests.get.
-#         This will intercept all calls to requests.get made by utils.get_json.
-#         """
-#         # Create mock response objects for the two expected calls
-#         # to requests.get:
-#         # 1. For the organization payload (from client.org)
-#         mock_org_response = Mock()
-#         mock_org_response.json.return_value = cls.org_payload
-#         mock_org_response.raise_for_status.return_value = None
-#
-#         # 2. For the repositories payload (from client.public_repos)
-#         mock_repos_response = Mock()
-#         mock_repos_response.json.return_value = cls.repos_payload
-#         mock_repos_response.raise_for_status.return_value = None
-#
-#         # Start patching 'requests.get'.
-#         # The 'side_effect' list provides responses sequentially.
-#         cls.get_patcher = patch('requests.get',
-#                                  side_effect=[mock_org_response,
-#                                               mock_repos_response])
-#         cls.mock_get = cls.get_patcher.start()
-#
-#     @classmethod
-#     def tearDownClass(cls):
-#         """
-#         Stop the patcher after all tests in this class have run.
-#         """
-#         cls.get_patcher.stop()
-#
-#     def test_public_repos(self):
-#         """
-#         Tests GithubOrgClient.public_repos in an integration context.
-#         """
-#         client = GithubOrgClient("google")
-#         actual_repos = client.public_repos
-#
-#         self.assertEqual(self.mock_get.call_count, 2)
-#
-#         expected_org_url = "https://api.github.com/orgs/google"
-#         self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
-#
-#         expected_repos_url = self.org_payload["repos_url"]
-#         self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)
-#
-#         extracted_names = [repo["name"] for repo in actual_repos]
-#         self.assertEqual(extracted_names, self.expected_repos)
-#
-#     def test_public_repos_with_license(self):
-#         """
-#         Tests the public_repos method with a license filter.
-#         """
-#         client = GithubOrgClient("google")
-#         actual_repos = client.public_repos("apache-2.0")
-#
-#         self.assertEqual(actual_repos, self.apache2_repos)
-#         self.assertEqual(self.mock_get.call_count, 2)
-#
-#         expected_org_url = "https://api.github.com/orgs/google"
-#         self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
-#
-#         expected_repos_url = self.org_payload["repos_url"]
-#         self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)
+        # 2. For the repositories payload (from client.public_repos)
+        mock_repos_response = Mock()
+        mock_repos_response.json.return_value = cls.repos_payload
+        mock_repos_response.raise_for_status.return_value = None
+
+        # Start patching 'requests.get'.
+        # The 'side_effect' list provides responses sequentially.
+        cls.get_patcher = patch('requests.get',
+                                 side_effect=[mock_org_response,
+                                              mock_repos_response])
+        cls.mock_get = cls.get_patcher.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Stop the patcher after all tests in this class have run.
+        """
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """
+        Tests GithubOrgClient.public_repos in an integration context.
+        """
+        client = GithubOrgClient("google")
+        actual_repos = client.public_repos() # public_repos is a method now
+
+        self.assertEqual(self.mock_get.call_count, 2)
+
+        expected_org_url = "https://api.github.com/orgs/google"
+        self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
+
+        expected_repos_url = self.org_payload["repos_url"]
+        self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)
+
+        # Extract names from actual_repos based on the fixture structure
+        extracted_names = [repo["name"] for repo in actual_repos]
+        self.assertEqual(extracted_names, self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """
+        Tests the public_repos method with a license filter.
+        """
+        client = GithubOrgClient("google")
+        actual_repos = client.public_repos("apache-2.0")
+
+        # Extract names from actual_repos based on the fixture structure
+        extracted_names = [repo["name"] for repo in actual_repos]
+        self.assertEqual(extracted_names, self.apache2_repos)
+        self.assertEqual(self.mock_get.call_count, 2) # Should still be 2 calls
+
+        expected_org_url = "https://api.github.com/orgs/google"
+        self.mock_get.call_args_list[0].assert_called_with(expected_org_url)
+
+        expected_repos_url = self.org_payload["repos_url"]
+        self.mock_get.call_args_list[1].assert_called_with(expected_repos_url)

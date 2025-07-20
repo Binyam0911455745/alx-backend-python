@@ -13,13 +13,7 @@ from typing import (
     Any,
     List
 )
-# Correctly import the fixtures from the provided fixtures.py file
-# fixtures.py contains a list of tuples, so we access them like this.
-# Assuming the structure of fixtures.py is like:
-# FIXTURES = [
-#     (org_payload_1, repos_payload_1, expected_repos_1, apache2_repos_1),
-#     (org_payload_2, repos_payload_2, expected_repos_2, apache2_repos_2),
-# ]
+# Correctly import FIXTURES as a list of tuples from fixtures.py
 from fixtures import FIXTURES
 
 
@@ -83,7 +77,6 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         # Payload that mock_get_json will return when called
         # This structure must match what GithubOrgClient.public_repos expects
-        # (list of dicts, each with a 'name' key and optional 'license')
         test_payload = [
             {"name": "alx-backend", "license": {"key": "mit"}},
             {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
@@ -95,7 +88,7 @@ class TestGithubOrgClient(unittest.TestCase):
         # PropertyMock is essential for mocking properties
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_public_repos_url:
-            # Set the return value for the mocked property
+            # Set the return value for the mocked property. Max 79 chars.
             mock_public_repos_url.return_value = \
                 "https://api.github.com/orgs/some_org/repos"
 
@@ -109,8 +102,7 @@ class TestGithubOrgClient(unittest.TestCase):
             repos = test_client.public_repos()
 
             # Assertions
-            # The expected list of repos (only names)
-            # based on our test_payload
+            # The expected list of repos (only names) based on our test_payload
             expected_repos_names = ["alx-backend", "alx-frontend", "alx-devops"]
             self.assertEqual(repos, expected_repos_names)
 
@@ -132,7 +124,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({}, "my_license", False),
         ({"name": "test-repo",
           "license": {"key": "my_license", "name": "MIT"}},
-          "my_license", True),
+         "my_license", True),
         ({"license": {}}, "my_license", False),
     ])
     def test_has_license(self, repo: Dict[str, Any],
@@ -145,7 +137,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
 
-@parameterized_class(FIXTURES) # Correctly use FIXTURES from the import
+@parameterized_class(FIXTURES)  # Use the correctly imported FIXTURES
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """
     Integration tests for GithubOrgClient.public_repos.
@@ -171,7 +163,6 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Start patching 'requests.get'.
         # The 'side_effect' list provides responses sequentially.
-        # This patch needs to be started and stopped correctly.
         cls.get_patcher = patch(
             'requests.get',
             side_effect=[mock_org_response, mock_repos_response]
@@ -197,16 +188,16 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Check call arguments for each call to requests.get
         expected_org_url = "https://api.github.com/orgs/google"
-        # .call_args_list returns a list of call objects.
-        # Each call object has .args (tuple of positional args) and .kwargs (dict of keyword args)
-        self.assertEqual(self.mock_get.call_args_list[0].args[0], expected_org_url)
+        # Access positional arguments using .args[0]
+        self.assertEqual(self.mock_get.call_args_list[0].args[0],
+                         expected_org_url) # E501 line too long
 
-        # The repos_url comes from the org_payload, which is a class attribute in parameterized_class
+        # The repos_url comes from the org_payload, which is a class attribute
         expected_repos_url = self.org_payload["repos_url"]
-        self.assertEqual(self.mock_get.call_args_list[1].args[0], expected_repos_url)
+        self.assertEqual(self.mock_get.call_args_list[1].args[0],
+                         expected_repos_url) # E501 line too long
 
-        # Extract names from actual_repos based on the fixture structure
-        # The public_repos method should return only the names, not the full repo dicts.
+        # The public_repos method should return only the names.
         self.assertEqual(actual_repos, self.expected_repos)
 
     def test_public_repos_with_license(self) -> None:
@@ -223,7 +214,9 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Verify call arguments
         expected_org_url = "https://api.github.com/orgs/google"
-        self.assertEqual(self.mock_get.call_args_list[0].args[0], expected_org_url)
+        self.assertEqual(self.mock_get.call_args_list[0].args[0],
+                         expected_org_url) # E501 line too long
 
         expected_repos_url = self.org_payload["repos_url"]
-        self.assertEqual(self.mock_get.call_args_list[1].args[0], expected_repos_url)
+        self.assertEqual(self.mock_get.call_args_list[1].args[0],
+                         expected_repos_url) # E501 line too long

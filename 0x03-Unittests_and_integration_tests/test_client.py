@@ -13,9 +13,10 @@ from typing import (
     List
 )
 
-# Note: Import fixtures from accounts.fixtures will be added in later tasks.
-# Ensure this line is commented out if it's present:
-# from accounts.fixtures import ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS
+# Note: Import fixtures from accounts.fixtures will be added in later
+# tasks. Ensure this line is commented out if it's present:
+# # from accounts.fixtures import ORG_PAYLOAD, REPOS_PAYLOAD,
+# # EXPECTED_REPOS, APACHE2_REPOS
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -27,7 +28,9 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google",),  # Parametrized test case for 'google' org
         ("abc",),     # Parametrized test case for 'abc' org
     ])
-    @patch('client.get_json')  # Patch 'get_json' where it's imported in client.py
+    @patch(
+        'client.get_json'
+    )  # Patch 'get_json' where it's imported in client.py
     def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
@@ -46,78 +49,79 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_get_json.assert_called_once_with(expected_url)
         self.assertEqual(result, expected_payload)
 
-def test_public_repos_url(self):
-    """
-    Tests that _public_repos_url returns the expected URL
-    based on a mocked GithubOrgClient.org property using
-    patch as a context manager.
-    """
-    expected_repos_url = "https://api.github.com/users/octocat/repos"
-    test_org_payload = {"repos_url": expected_repos_url}
 
-    with patch('client.GithubOrgClient.org',
-               new_callable=PropertyMock) as mock_org:
-        mock_org.return_value = test_org_payload
+    def test_public_repos_url(self):
+        """
+        Tests that _public_repos_url returns the expected URL
+        based on a mocked GithubOrgClient.org property using
+        patch as a context manager.
+        """
+        expected_repos_url = "https://api.github.com/users/octocat/repos"
+        test_org_payload = {"repos_url": expected_repos_url}
 
-        client = GithubOrgClient("test_org")
-        result = client._public_repos_url  # Access the property
+        with patch('client.GithubOrgClient.org',
+                   new_callable=PropertyMock) as mock_org:
+            mock_org.return_value = test_org_payload
 
-        # Assertions
-        mock_org.assert_called_once()
-        self.assertEqual(result, expected_repos_url)
+            client = GithubOrgClient("test_org")
+            result = client._public_repos_url  # Access the property
 
-
-@patch('client.get_json')  # Mock get_json as a decorator
-def test_public_repos(self, mock_get_json: Mock):
-    """
-    Tests GithubOrgClient.public_repos by mocking get_json
-    and _public_repos_url.
-    Verifies correct calls and returned data for Task 6.
-    """
-    test_repos_payload: List[Dict[str, Any]] = [
-        {"name": "alx-backend", "license": {"key": "mit"}},
-        {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
-        {"name": "alx-fullstack", "license": {"key": "gpl-3.0"}}
-    ]
-    mock_get_json.return_value = test_repos_payload
-
-    # This is the URL that _public_repos_url would return
-    expected_repos_api_url = \
-        "https://api.github.com/orgs/mock_org/repos"
-
-    # Mock _public_repos_url as a context manager
-    with patch('client.GithubOrgClient._public_repos_url',
-               new_callable=PropertyMock) as mock_public_repos_url:
-        mock_public_repos_url.return_value = expected_repos_api_url
-
-        client = GithubOrgClient("mock_org")
-        result = client.public_repos
-
-        # Assertions as per Task 6 requirements
-        self.assertEqual(result, test_repos_payload)
-        mock_public_repos_url.assert_called_once()
-        mock_get_json.assert_called_once_with(expected_repos_api_url)
+            # Assertions
+            mock_org.assert_called_once()
+            self.assertEqual(result, expected_repos_url)
 
 
-@parameterized.expand([
-    ({"license": {"key": "my_license"}}, "my_license", True),
-    ({"license": {"key": "other_license"}}, "my_license", False),
-    ({"license": {"key": "my_license"}}, "other_license", False),
-    ({"license": None}, "my_license", False),
-    ({}, "my_license", False),
-    ({"name": "test-repo",
-      "license": {"key": "my_license", "name": "MIT"}},
-     "my_license", True),
-    ({"license": {}}, "my_license", False),
-])
-def test_has_license(self, repo: Dict[str, Any],
-                     license_key: str, expected_result: bool):
-    """
-    Tests that GithubOrgClient.has_license returns the
-    expected boolean value.
-    """
-    result = GithubOrgClient.has_license(repo, license_key)
-    self.assertEqual(result, expected_result)
+    @patch('client.get_json')  # Mock get_json as a decorator
+    def test_public_repos(self, mock_get_json: Mock):
+        """
+        Tests GithubOrgClient.public_repos by mocking get_json
+        and _public_repos_url.
+        Verifies correct calls and returned data for Task 6.
+        """
+        test_repos_payload: List[Dict[str, Any]] = [
+            {"name": "alx-backend", "license": {"key": "mit"}},
+            {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
+            {"name": "alx-fullstack", "license": {"key": "gpl-3.0"}}
+        ]
+        mock_get_json.return_value = test_repos_payload
+
+        # This is the URL that _public_repos_url would return
+        expected_repos_api_url = \
+            "https://api.github.com/orgs/mock_org/repos"
+
+        # Mock _public_repos_url as a context manager
+        with patch('client.GithubOrgClient._public_repos_url',
+                   new_callable=PropertyMock) as mock_public_repos_url:
+            mock_public_repos_url.return_value = expected_repos_api_url
+
+            client = GithubOrgClient("mock_org")
+            result = client.public_repos
+
+            # Assertions as per Task 6 requirements
+            self.assertEqual(result, test_repos_payload)
+            mock_public_repos_url.assert_called_once()
+            mock_get_json.assert_called_once_with(expected_repos_api_url)
+
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+        ({"license": {"key": "my_license"}}, "other_license", False),
+        ({"license": None}, "my_license", False),
+        ({}, "my_license", False),
+        ({"name": "test-repo",
+          "license": {"key": "my_license", "name": "MIT"}},
+         "my_license", True),
+        ({"license": {}}, "my_license", False),
+    ])
+    def test_has_license(self, repo: Dict[str, Any],
+                         license_key: str, expected_result: bool):
+        """
+        Tests that GithubOrgClient.has_license returns the
+        expected boolean value.
+        """
+        result = GithubOrgClient.has_license(repo, license_key)
+        self.assertEqual(result, expected_result)
 
 
 # The following integration test class should remain commented out
@@ -142,7 +146,8 @@ def test_has_license(self, repo: Dict[str, Any],
 #         Set up class-level mocks for requests.get.
 #         This will intercept all calls to requests.get made by utils.get_json.
 #         """
-#         # Create mock response objects for the two expected calls to requests.get:
+#         # Create mock response objects for the two expected calls
+#         # to requests.get:
 #         # 1. For the organization payload (from client.org)
 #         mock_org_response = Mock()
 #         mock_org_response.json.return_value = cls.org_payload

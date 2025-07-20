@@ -48,8 +48,8 @@ class TestGetJson(unittest.TestCase):
     """
 
     @parameterized.expand([
-        ("[http://example.com](http://example.com)", {"payload": True}),
-        ("[http://holberton.io](http://holberton.io)", {"payload": False}),
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False}),
     ])
     @patch('requests.get')
     def test_get_json(self, test_url: str, test_payload: Dict, mock_get: Mock):
@@ -104,4 +104,4 @@ class TestMemoize(unittest.TestCase):
 
             # Verify that the memoized property returned the correct result.
             self.assertEqual(result1, 42)
-            self.assertEqual(result2, 42)|
+            self.assertEqual(result2, 42)

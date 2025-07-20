@@ -7,8 +7,7 @@ the GithubOrgClient class.
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized, parameterized_class
-from client import GithubOrgClient
-import client # Added to correctly patch requests.get
+from client import GithubOrgClient, get_json # Import get_json too, if it's in client.py
 from typing import (
     Dict,
     Any,
@@ -27,7 +26,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google",),
         ("abc",),
     ])
-    @patch('client.get_json')
+    @patch('client.get_json') # This remains correct for unit tests of test_org
     def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
@@ -76,44 +75,26 @@ class TestGithubOrgClient(unittest.TestCase):
         Verifies that the correct list of repos is returned and
         that the mocks were called as expected.
         """
-        # Payload that mock_get_json will return when called
-        # This structure must match what GithubOrgClient.public_repos expects
         test_payload = [
             {"name": "alx-backend", "license": {"key": "mit"}},
             {"name": "alx-frontend", "license": {"key": "apache-2.0"}},
-            {"name": "alx-devops"},  # Repo with no license
+            {"name": "alx-devops"},
         ]
         mock_get_json.return_value = test_payload
 
-        # Mock the _public_repos_url property using patch as a context manager
-        # PropertyMock is essential for mocking properties
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_public_repos_url:
-            # Set the return value for the mocked property.
             mock_public_repos_url.return_value = \
                 "https://api.github.com/orgs/some_org/repos"
 
-            # Create an instance of GithubOrgClient
-            # The 'org' argument here is just a placeholder, as the actual API
-            # call for the organization's data is bypassed by the
-            # _public_repos_url mock.
             test_client_instance = GithubOrgClient("holberton")
-
-            # Call the method under test
             repos = test_client_instance.public_repos()
 
-            # Assertions
-            # The expected list of repos (only names) based on our test_payload
             expected_repos_names = ["alx-backend", "alx-frontend",
                                     "alx-devops"]
             self.assertEqual(repos, expected_repos_names)
 
-            # Verify that the mocked _public_repos_url property was accessed
-            # exactly once
             mock_public_repos_url.assert_called_once()
-
-            # Verify that the mocked get_json method was called exactly once
-            # with the URL returned by the _public_repos_url mock
             mock_get_json.assert_called_once_with(
                 "https://api.github.com/orgs/some_org/repos"
             )
@@ -149,25 +130,23 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     def setUpClass(cls) -> None:
         """
         Set up class-level mocks for requests.get.
-        This will intercept all calls to requests.get made by utils.get_json.
+        This will intercept all calls to requests.get made by get_json
+        which is used by GithubOrgClient.
         """
-        # Create mock response objects for the two expected calls
-        # to requests.get:
-        # 1. For the organization payload (from client.org)
+        # Create a mock for the first call to requests.get (for org payload)
         mock_org_response = Mock()
         mock_org_response.json.return_value = cls.org_payload
         mock_org_response.raise_for_status.return_value = None
 
-        # 2. For the repositories payload (from client.public_repos)
+        # Create a mock for the second call to requests.get (for repos payload)
         mock_repos_response = Mock()
         mock_repos_response.json.return_value = cls.repos_payload
         mock_repos_response.raise_for_status.return_value = None
 
-        # Start patching 'requests.get'.
-        # The target for patching requests.get should be where it's
-        # looked up in the client module, typically 'client.requests.get'.
+        # Patch `requests.get` directly in the `client` module where it's used
+        # This is the most common and robust way for ALX projects.
         cls.get_patcher = patch(
-            'client.requests.get', # Changed patch target
+            'client.requests.get',  # Assumes `client.py` has `import requests`
             side_effect=[mock_org_response, mock_repos_response]
         )
         cls.mock_get = cls.get_patcher.start()
@@ -184,23 +163,18 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         Tests GithubOrgClient.public_repos in an integration context.
         """
         client_instance = GithubOrgClient("google")
-        # Ensure public_repos is called as a method
         actual_repos = client_instance.public_repos()
 
-        # Check that requests.get was called twice
         self.assertEqual(self.mock_get.call_count, 2)
 
-        # Check call arguments for each call to requests.get
         expected_org_url = "https://api.github.com/orgs/google"
         self.assertEqual(self.mock_get.call_args_list[0].args[0],
                          expected_org_url)
 
-        # The repos_url comes from the org_payload, which is a class attribute
         expected_repos_url = self.org_payload["repos_url"]
         self.assertEqual(self.mock_get.call_args_list[1].args[0],
                          expected_repos_url)
 
-        # The public_repos method should return only the names.
         self.assertEqual(actual_repos, self.expected_repos)
 
     def test_public_repos_with_license(self) -> None:
@@ -208,15 +182,11 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         Tests the public_repos method with a license filter.
         """
         client_instance = GithubOrgClient("google")
-        # Ensure public_repos is called as a method
         actual_repos = client_instance.public_repos("apache-2.0")
 
-        # The public_repos method with a license filter should return names.
         self.assertEqual(actual_repos, self.apache2_repos)
-        # Should still be 2 calls to requests.get even with license filter
         self.assertEqual(self.mock_get.call_count, 2)
 
-        # Verify call arguments (same as without license filter)
         expected_org_url = "https://api.github.com/orgs/google"
         self.assertEqual(self.mock_get.call_args_list[0].args[0],
                          expected_org_url)

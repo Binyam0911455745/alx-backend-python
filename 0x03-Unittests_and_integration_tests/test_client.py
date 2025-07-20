@@ -105,7 +105,8 @@ class TestGithubOrgClient(unittest.TestCase):
             repos = test_client.public_repos()
 
             # Assertions
-            # The expected list of repos (only names) based on our test_payload
+            # The expected list of repos (only names)
+            # based on our test_payload
             expected_repos = ["alx-backend", "alx-frontend", "alx-devops"]
             self.assertEqual(repos, expected_repos)
 

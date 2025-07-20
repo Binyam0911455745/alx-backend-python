@@ -483,8 +483,6 @@ EXPECTED_REPOS = ["gocv", "guava", "closure-compiler"]
 
 APACHE2_REPOS = ["gocv", "guava"]
 
-# THIS IS THE CRUCIAL PART FOR `FIXTURES` IMPORT
-# Make sure this list is at the very end of your fixtures.py file
 FIXTURES = [
     (ORG_PAYLOAD, REPOS_PAYLOAD, EXPECTED_REPOS, APACHE2_REPOS),
 ]

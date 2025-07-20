@@ -88,7 +88,7 @@ class TestGithubOrgClient(unittest.TestCase):
         # PropertyMock is essential for mocking properties
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_public_repos_url:
-            # Set the return value for the mocked property. Max 79 chars.
+            # Set the return value for the mocked property.
             mock_public_repos_url.return_value = \
                 "https://api.github.com/orgs/some_org/repos"
 
@@ -103,7 +103,8 @@ class TestGithubOrgClient(unittest.TestCase):
 
             # Assertions
             # The expected list of repos (only names) based on our test_payload
-            expected_repos_names = ["alx-backend", "alx-frontend", "alx-devops"]
+            expected_repos_names = ["alx-backend", "alx-frontend",
+                                    "alx-devops"]  # E501 fix
             self.assertEqual(repos, expected_repos_names)
 
             # Verify that the mocked _public_repos_url property was accessed
@@ -188,14 +189,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         # Check call arguments for each call to requests.get
         expected_org_url = "https://api.github.com/orgs/google"
-        # Access positional arguments using .args[0]
         self.assertEqual(self.mock_get.call_args_list[0].args[0],
-                         expected_org_url) # E501 line too long
+                         expected_org_url)
 
         # The repos_url comes from the org_payload, which is a class attribute
         expected_repos_url = self.org_payload["repos_url"]
         self.assertEqual(self.mock_get.call_args_list[1].args[0],
-                         expected_repos_url) # E501 line too long
+                         expected_repos_url)
 
         # The public_repos method should return only the names.
         self.assertEqual(actual_repos, self.expected_repos)
@@ -215,8 +215,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         # Verify call arguments
         expected_org_url = "https://api.github.com/orgs/google"
         self.assertEqual(self.mock_get.call_args_list[0].args[0],
-                         expected_org_url) # E501 line too long
+                         expected_org_url)
 
         expected_repos_url = self.org_payload["repos_url"]
         self.assertEqual(self.mock_get.call_args_list[1].args[0],
-                         expected_repos_url) # E501 line too long
+                         expected_repos_url)

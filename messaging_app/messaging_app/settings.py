@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta # Added for SIMPLE_JWT configuration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vj&u&q81!3hm2h_92yavxzmn!p3um7k2fg12)xjzr+x2d(_4-v'
+SECRET_KEY = 'django-insecure-vj&u&q81!3hm2h_92yavxzmn!p3um7k2fg12)xjzr+x2d(_4-v' # Keep your original secret key
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,8 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework', # Add this line
-    'chats',          # Add this line
+    'rest_framework',
+    'rest_framework.authtoken', # Required if you've used TokenAuthentication before or for default User model
+    'rest_framework_simplejwt', # Add this line
+    'chats',                    # Add this line
 ]
 
 MIDDLEWARE = [
@@ -68,25 +71,6 @@ TEMPLATES = [
         },
     },
 ]
-
-# ... (other settings above) ...
-
-# Django REST Framework Settings
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        # SessionAuthentication is crucial for the browsable API login
-        'rest_framework.authentication.SessionAuthentication',
-        # BasicAuthentication is also useful for quick browser authentication
-        'rest_framework.authentication.BasicAuthentication',
-        # You might add 'rest_framework.authentication.TokenAuthentication' later
-        # if you implement token-based authentication for your mobile app/frontend.
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
-}
-
-# ... (rest of your settings below) ...
 
 WSGI_APPLICATION = 'messaging_app.wsgi.application'
 
@@ -142,5 +126,52 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Custom User Model setting
-AUTH_USER_MODEL = 'chats.User' # <--- Add this line here
+AUTH_USER_MODEL = 'chats.User' # <--- This line was already present and is correct
+
+
+# Django REST Framework Settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # Added/Replaced
+        'rest_framework.authentication.SessionAuthentication', # Keep for browser-based access if needed
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Changed from IsAuthenticated
+    ),
+    # You might want to add pagination or throttling here later
+}
+
+# SIMPLE_JWT settings (Optional but Recommended)
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # Access token valid for 60 minutes
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),   # Refresh token valid for 1 day
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
+
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY, # Uses your Django secret key
+    "VERIFYING_KEY": "",
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+
+    "AUTH_HEADER_TYPES": ("Bearer",), # Common convention for JWT is "Bearer"
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+}

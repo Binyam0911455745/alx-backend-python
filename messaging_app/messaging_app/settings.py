@@ -128,17 +128,18 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model setting
-AUTH_USER_MODEL = 'chats.User' # <--- This line was already present and is correct
+AUTH_USER_MODEL = 'chats.User'
 
 
 # Django REST Framework Settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # Added/Replaced
-        'rest_framework.authentication.SessionAuthentication', # Keep for browser-based access if needed
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication', # <--- Added this line back
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Changed from IsAuthenticated
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
     # You might want to add pagination or throttling here later
 }

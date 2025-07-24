@@ -1,0 +1,8 @@
+# alx-backend-python/messaging_app/chats/pagination.py
+
+from rest_framework.pagination import PageNumberPagination
+
+class MessagePagination(PageNumberPagination):
+    page_size = 20  # Number of messages per page
+    page_size_query_param = 'page_size' # Allows client to override page size (e.g., ?page_size=10)
+    max_page_size = 100 # Maximum page size allowed if client overrides

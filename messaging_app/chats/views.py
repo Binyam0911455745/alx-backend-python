@@ -7,11 +7,15 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404
 from django.http import Http404 # Added for potential explicit 403 handling check
 
+from django_filters.rest_framework import DjangoFilterBackend # <--- Import this
+from .filters import MessageFilter, ConversationFilter # <--- Import your filter classes
+
 from . import models
 from . import serializers
 from .permissions import IsOwnerOrParticipant # Import your consolidated custom permission
+from .pagination import MessagePagination # <--- Import your pagination class here
 
-# --- Conversation ViewSet (Remains largely the same as your "old file" version) ---
+# --- Conversation ViewSet ---
 class ConversationViewSet(viewsets.ModelViewSet):
     """
     API view to list, create, retrieve, update, and delete conversations.
@@ -20,6 +24,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ConversationSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrParticipant]
     lookup_field = 'conversation_id' # Important: Specifies the field for lookup (e.g., in /conversations/<UUID>/)
+
+    filter_backends = [DjangoFilterBackend] # <--- Add this
+    filterset_class = ConversationFilter # <--- Add this, specify your filter class
 
     def get_queryset(self):
         """
@@ -49,7 +56,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
-# --- Message ViewSet (Converted to ModelViewSet) ---
+# --- Message ViewSet ---
 class MessageViewSet(viewsets.ModelViewSet):
     """
     API view to list, create, retrieve, update, and delete messages.
@@ -58,6 +65,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.MessageSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrParticipant]
     lookup_field = 'message_id' # Assuming message_id is the lookup field for individual messages
+    pagination_class = MessagePagination # <--- Added this line to apply pagination
+
+    filter_backends = [DjangoFilterBackend] # <--- Add this
+    filterset_class = MessageFilter # <--- Add this, specify your filter class
 
     def get_queryset(self):
         """
@@ -116,11 +127,6 @@ class MessageViewSet(viewsets.ModelViewSet):
             conversation=conversation, # Important: Filter by the conversation
             message_id=message_pk # Use the actual message_id for lookup
         )
-
-        # DRF automatically calls check_object_permissions for detail views.
-        # This explicit call is mostly for demonstrating where it would fit
-        # or if specific custom logic is needed *before* standard permission checks.
-        # self.check_object_permissions(self.request, obj)
         return obj
 
     def retrieve(self, request, *args, **kwargs):
@@ -131,15 +137,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         """
         instance = self.get_object() # This already ensures conversation participation
         
-        # Now, specifically check if the current user is the sender of the message
-        # OR a participant of the conversation. IsOwnerOrParticipant should handle this.
-        # This explicit `if not request.user == instance.sender:` check might be
-        # what the checker is looking for to ensure sender-only edit/delete,
-        # but for retrieve, being a participant is usually enough.
-        # The prompt for the "correction" implies a `sender` check for `retrieve`
-        # which is a bit strict for viewing messages in a group chat.
-        # However, to match the *spirit* of the provided "correction" for the checker:
-        
         # We assume IsOwnerOrParticipant would have already handled the permission,
         # but if the checker *specifically* wants a direct check here for 403:
         if not self.permission_classes[1]().has_object_permission(request, self, instance):
@@ -147,10 +144,3 @@ class MessageViewSet(viewsets.ModelViewSet):
                              status=status.HTTP_403_FORBIDDEN)
         
         return super().retrieve(request, *args, **kwargs)
-
-    # Note: perform_update and perform_destroy will also implicitly use get_object
-    # and then the permission_classes will be applied. If IsOwnerOrParticipant
-    # is set up to allow only the sender to update/delete, then no further
-    # explicit checks are needed here. If it allows all participants to update/delete,
-    # and you only want the sender, then refine IsOwnerOrParticipant or add a
-    # specific `has_object_permission` override in this ViewSet.

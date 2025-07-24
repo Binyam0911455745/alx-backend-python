@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken', # Required if you've used TokenAuthentication before or for default User model
     'rest_framework_simplejwt', # Add this line
-    'chats',                    # Add this line
+    'chats', # Add this line
+    'django_filters',                   
 ]
 
 MIDDLEWARE = [
@@ -136,12 +137,17 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication', # <--- Added this line back
+        'rest_framework.authentication.BasicAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
-    # You might want to add pagination or throttling here later
+    # Added pagination settings
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', # Use DRF's default
+    'PAGE_SIZE': 20, # This applies to the default PageNumberPagination class
+
+    # OR, to use your custom pagination class as the default:
+    # 'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination', # <--- Uncomment this line if you want your custom pagination class as global default
 }
 
 # SIMPLE_JWT settings (Optional but Recommended)
@@ -149,30 +155,4 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # Access token valid for 60 minutes
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),   # Refresh token valid for 1 day
     "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
-    "UPDATE_LAST_LOGIN": False,
-
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY, # Uses your Django secret key
-    "VERIFYING_KEY": "",
-    "AUDIENCE": None,
-    "ISSUER": None,
-    "JWK_URL": None,
-    "LEEWAY": 0,
-
-    "AUTH_HEADER_TYPES": ("Bearer",), # Common convention for JWT is "Bearer"
-    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
-    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "TOKEN_TYPE_CLAIM": "token_type",
-    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-
-    "JTI_CLAIM": "jti",
-
-    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-}
+    "

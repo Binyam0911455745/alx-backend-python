@@ -1,9 +1,9 @@
 # chats/middleware.py
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta # Import timedelta for time windows
 import os # Import os to construct the file path reliably
 from django.conf import settings # To get the BASE_DIR setting
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden # Import HttpResponseForbidden
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -44,6 +44,7 @@ class RequestLoggingMiddleware:
         # (For this task, we don't need post-response logging, but it's where it would go)
 
         return response
+
 class RestrictAccessByTimeMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -65,3 +66,52 @@ class RestrictAccessByTimeMiddleware:
         response = self.get_response(request)
         return response
 
+
+class OffensiveLanguageMiddleware:
+    # This dictionary will store timestamps of POST requests for each IP address.
+    # It's a class variable so it's shared across all instances of the middleware.
+    # In a production environment, you would use a proper caching system (like Redis)
+    # as this will reset if the server restarts and won't scale across multiple processes.
+    requests_per_ip = {}
+    MAX_MESSAGES_PER_MINUTE = 5
+    TIME_WINDOW_MINUTES = 1
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # We only care about POST requests as they typically represent sending messages
+        if request.method == 'POST':
+            # Get the client's IP address
+            # Use X-Forwarded-For if behind a proxy, otherwise REMOTE_ADDR
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(',')[0]
+            else:
+                ip_address = request.META.get('REMOTE_ADDR')
+
+            current_time = datetime.now()
+
+            # Initialize list for this IP if it's the first time we see it
+            if ip_address not in self.requests_per_ip:
+                self.requests_per_ip[ip_address] = []
+
+            # Clean up old requests (older than TIME_WINDOW_MINUTES)
+            # This ensures only recent requests contribute to the count
+            self.requests_per_ip[ip_address] = [
+                t for t in self.requests_per_ip[ip_address]
+                if current_time - t <= timedelta(minutes=self.TIME_WINDOW_MINUTES)
+            ]
+
+            # Check if the limit is exceeded
+            if len(self.requests_per_ip[ip_address]) >= self.MAX_MESSAGES_PER_MINUTE:
+                return HttpResponseForbidden(
+                    f"You have exceeded the message limit ({self.MAX_MESSAGES_PER_MINUTE} messages per {self.TIME_WINDOW_MINUTES} minute). Please try again later."
+                )
+            else:
+                # Add the current request's timestamp to the list
+                self.requests_per_ip[ip_address].append(current_time)
+
+        # Process the request if not blocked, or if it's not a POST request
+        response = self.get_response(request)
+        return response

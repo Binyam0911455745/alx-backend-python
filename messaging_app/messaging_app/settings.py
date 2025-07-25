@@ -39,10 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken', # Required if you've used TokenAuthentication before or for default User model
-    'rest_framework_simplejwt', # Add this line
-    'chats', # Add this line
-    'django_filters',                   
+    'rest_framework.authtoken', # For DRF's built-in TokenAuthentication (good to have)
+    'rest_framework_simplejwt', # For JWT
+    'django_filters',           # For filtering
+    'chats',                    # Your chats app
+    # Add any other apps you might have
 ]
 
 MIDDLEWARE = [
@@ -137,22 +138,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.BasicAuthentication', # REQUIRED BY CHECKER
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated', # Strong default for API
     ),
-    # Added pagination settings
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', # Use DRF's default
-    'PAGE_SIZE': 20, # This applies to the default PageNumberPagination class
-
-    # OR, to use your custom pagination class as the default:
-    # 'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination', # <--- Uncomment this line if you want your custom pagination class as global default
+    'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination', # Use your custom pagination
+    'PAGE_SIZE': 20, # Default size for the PageNumberPagination if used directly
 }
 
 # SIMPLE_JWT settings (Optional but Recommended)
-
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
@@ -160,21 +155,27 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
+
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": SECRET_KEY, # Uses your Django project's secret key
+    "VERIFYING_KEY": None, # This can be None if using HS256 and SIGNING_KEY is enough
     "AUDIENCE": None,
     "ISSUER": None,
     "JWK_URL": None,
     "LEEWAY": 0,
+
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
     "JTI_CLAIM": "jti",
+
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),

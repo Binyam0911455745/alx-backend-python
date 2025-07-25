@@ -1,11 +1,19 @@
+# chats/models.py
+
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
-from django.contrib.auth import get_user_model # <-- Added this line
+from django.contrib.auth import get_user_model
+from django.db.models import Q # Added for potential future filtering in views
 
-# Custom Manager for User (Optional but good practice for AbstractUser extensions)
+
+# Custom Manager for User
 class CustomUserManager(BaseUserManager):
+    """
+    Custom manager for the User model, providing methods for creating
+    regular users and superusers with email as the unique identifier.
+    """
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -29,27 +37,32 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-# User Model (Extension of AbstractUser)
+# Custom User Model
 class User(AbstractUser):
+    """
+    Custom User model extending Django's AbstractUser to use email as the
+    primary identifier and include custom fields like UUID primary key,
+    phone number, and user roles.
+    """
     USER_ROLES = (
         ('guest', 'Guest'),
         ('host', 'Host'),
         ('admin', 'Admin'),
     )
 
-    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Inherits username, first_name, last_name, email from AbstractUser
-    # We will override email to be unique and required
+    # Use a UUID as the primary key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # Renamed from user_id to id for Django's default behavior
+    
+    # Email is unique and required for authentication
     email = models.EmailField(unique=True, null=False, blank=False)
-    # password_hash is handled by AbstractUser's password field
-
+    
+    # Custom fields
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     role = models.CharField(max_length=10, choices=USER_ROLES, default='guest', null=False)
-    created_at = models.DateTimeField(default=timezone.now, editable=False) # Use timezone.now for consistency
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
 
-    # Remove username field if you want to use email as unique identifier for login
-    # For simplicity and alignment with 'email (VARCHAR, UNIQUE, NOT NULL)', let's remove username unique constraint
-    username = None # Set username to None to make email the unique identifier for auth
+    # Remove username field and set email as the USERNAME_FIELD
+    username = None 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'role'] # Fields prompted when creating a superuser
 
@@ -59,50 +72,64 @@ class User(AbstractUser):
         return self.email
 
     class Meta:
-        # Ensure proper table name if you need to override default Django naming
-        # db_table = 'user_profiles' # Example
-        pass
+        # Define a verbose name for the admin interface
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+        # Optionally, set the database table name
+        # db_table = 'app_users' # Example: if you want a custom table name
 
 
-# Get the custom User model after it's defined
-# This is used for ForeignKey/ManyToManyField relationships to ensure correct reference
-# User = get_user_model() # This line is moved below the User model definition if User is in the same file
-# However, for consistency with the new changes, we typically call get_user_model()
-# at the top and then use the aliased User.
-# Since User is defined *in this file*, we can directly use 'User' or
-# for forward references (if Message came before User), use 'chats.User' string.
-# But for clarity and robustness, let's ensure models refer to the actual User class.
+# Important: Always use get_user_model() when referencing the User model
+# to ensure compatibility with custom user models configured in settings.py
+User = get_user_model()
+
 
 # Conversation Model
 class Conversation(models.Model):
-    conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Many-to-many relationship with User for participants
-    participants = models.ManyToManyField(get_user_model(), related_name='conversations') # <-- Use get_user_model() here
-    created_at = models.DateTimeField(default=timezone.now, editable=False) # Keep as default=timezone.now
+    """
+    Represents a conversation between multiple participants.
+    """
+    # Using Django's default auto-incrementing 'id' for primary key
+    # If you want a UUID primary key for Conversation, change `id` field:
+    # conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    participants = models.ManyToManyField(User, related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True) # Automatically set creation time
+    updated_at = models.DateTimeField(auto_now=True)     # Automatically update on save
+    
+    # Optional: Add a name/title for group conversations
+    # name = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"Conversation {self.conversation_id} ({self.participants.count()} participants)"
+        # Improve __str__ for clarity
+        participant_names = ", ".join([p.email for p in self.participants.all()])
+        return f"Conversation {self.id} with {participant_names}"
 
     class Meta:
-        # Ensure proper table name if you need to override default Django naming
-        # db_table = 'conversations' # Example
-        pass
+        verbose_name = 'Conversation'
+        verbose_name_plural = 'Conversations'
+        # db_table = 'messaging_conversations' # Example
 
 
 # Message Model
 class Message(models.Model):
-    message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Use get_user_model() for sender ForeignKey
-    sender = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='sent_messages') # <-- Use get_user_model()
-    # 'Conversation' in quotes for forward reference if Conversation was defined after Message
-    conversation = models.ForeignKey('Conversation', on_delete=models.CASCADE, related_name='messages')
-    content = models.TextField(null=False, blank=False) # <-- Renamed message_body to content
-    timestamp = models.DateTimeField(auto_now_add=True) # <-- Renamed sent_at to timestamp and set auto_now_add
+    """
+    Represents a single message within a conversation.
+    """
+    # Using Django's default auto-incrementing 'id' for primary key
+    # If you want a UUID primary key for Message, change `id` field:
+    # message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    def __str__(self):
-        return f"Message {self.message_id} from {self.sender.email} in {self.conversation.conversation_id}"
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField() # Renamed from message_body for clarity, as per your "correction"
+    timestamp = models.DateTimeField(auto_now_add=True) # Automatically set when message is created
 
     class Meta:
-        # Ensure proper table name if you need to override default Django naming
-        # db_table = 'messages' # Example
-        ordering = ['timestamp'] # <-- Changed ordering to timestamp
+        ordering = ['timestamp'] # Order messages chronologically
+        verbose_name = 'Message'
+        verbose_name_plural = 'Messages'
+        # db_table = 'conversation_messages' # Example
+
+    def __str__(self):
+        return f"Message {self.id} from {self.sender.email} in Conv {self.conversation.id}: {self.content[:50]}..."

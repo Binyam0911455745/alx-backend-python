@@ -1,9 +1,9 @@
 # chats/middleware.py
 
-from datetime import datetime, time, timedelta # Import timedelta for time windows
+from datetime import datetime, time, timedelta # Added timedelta for OffensiveLanguageMiddleware
 import os # Import os to construct the file path reliably
 from django.conf import settings # To get the BASE_DIR setting
-from django.http import HttpResponseForbidden # Import HttpResponseForbidden
+from django.http import HttpResponseForbidden # Import HttpResponseForbidden for blocking responses
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -45,10 +45,11 @@ class RequestLoggingMiddleware:
 
         return response
 
+
 class RestrictAccessByTimeMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        # Define allowed access hours
+        # Define allowed access hours (6 AM to 9 PM)
         self.start_time = time(6, 0, 0)  # 6 AM
         self.end_time = time(21, 0, 0)  # 9 PM (21:00)
 
@@ -113,5 +114,33 @@ class OffensiveLanguageMiddleware:
                 self.requests_per_ip[ip_address].append(current_time)
 
         # Process the request if not blocked, or if it's not a POST request
+        response = self.get_response(request)
+        return response
+
+
+class RolePermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Define URL prefixes that require admin/moderator permissions
+        # By default, we'll restrict access to the Django admin panel
+        self.restricted_admin_paths = ['/admin/']
+
+    def __call__(self, request):
+        # Check if the requested path starts with any of the restricted admin paths
+        is_restricted_path = False
+        for path_prefix in self.restricted_admin_paths:
+            if request.path.startswith(path_prefix):
+                is_restricted_path = True
+                break
+
+        if is_restricted_path:
+            # If it's a restricted path, check user's role
+            # Users must be authenticated AND either staff or superuser
+            # is_staff covers both regular staff users and superusers.
+            if not request.user.is_authenticated or not request.user.is_staff:
+                return HttpResponseForbidden("You do not have the necessary administrative/moderator permissions to access this page.")
+
+        # If it's not a restricted path, or if the user has permission,
+        # proceed with the request.
         response = self.get_response(request)
         return response

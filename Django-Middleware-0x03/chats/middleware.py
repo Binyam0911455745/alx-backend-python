@@ -1,8 +1,9 @@
 # chats/middleware.py
 
-from datetime import datetime
+from datetime import datetime, time
 import os # Import os to construct the file path reliably
 from django.conf import settings # To get the BASE_DIR setting
+from django.http import HttpResponseForbidden
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -43,3 +44,24 @@ class RequestLoggingMiddleware:
         # (For this task, we don't need post-response logging, but it's where it would go)
 
         return response
+class RestrictAccessByTimeMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Define allowed access hours
+        self.start_time = time(6, 0, 0)  # 6 AM
+        self.end_time = time(21, 0, 0)  # 9 PM (21:00)
+
+    def __call__(self, request):
+        # Get the current time
+        now = datetime.now().time()
+
+        # Check if the current time is outside the allowed window (6 AM to 9 PM)
+        # Meaning, if it's between 9 PM (inclusive) and 6 AM (exclusive)
+        if not (self.start_time <= now < self.end_time):
+            # Access is denied
+            return HttpResponseForbidden("Access to chat is restricted between 9 PM and 6 AM EAT.")
+
+        # If within the allowed time, proceed with the request
+        response = self.get_response(request)
+        return response
+

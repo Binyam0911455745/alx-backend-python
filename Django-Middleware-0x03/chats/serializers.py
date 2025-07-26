@@ -24,7 +24,3 @@ class ConversationSerializer(serializers.ModelSerializer):
         # explicitly has a field named 'conversation_id' (which is highly unlikely and redundant).
         fields = ['id', 'participants', 'created_at', 'updated_at'] # OR whatever fields you have
         read_only_fields = ['id', 'created_at', 'updated_at'] # 'id' should usually be read-only
-class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = '__all__' # Or specify your desired fields, e.g., ['id', 'sender', 'conversation', 'content', 'timestamp']

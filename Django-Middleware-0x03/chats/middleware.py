@@ -42,6 +42,23 @@ class RestrictAccessByTimeMiddleware:
         response = self.get_response(request)
         return response
 
+class RolePermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Check if the user is authenticated
+        if request.user.is_authenticated:
+            # Check if the user is admin or moderator
+            if not (request.user.is_staff or request.user.is_superuser):
+                return HttpResponseForbidden("You do not have permission to access this resource.")
+        else:
+            return HttpResponseForbidden("You do not have permission to access this resource.")
+
+        response = self.get_response(request)
+        return response
+
+
 # If you need to include RestrictAccessByTimeMiddleware for other checks,
 # place it here as well, but the current checker output only mentions RequestLoggingMiddleware.
 # class RestrictAccessByTimeMiddleware:

@@ -13,6 +13,10 @@ from .permissions import IsOwnerOrParticipant # Your custom object-level permiss
 from .pagination import MessagePagination # Your custom pagination class
 from .filters import MessageFilter, ConversationFilter # Your custom filter classes
 
+from django.http import HttpResponse
+
+def admin_view(request):
+    return HttpResponse("Welcome, Admin!")
 
 class MessageViewSet(viewsets.ModelViewSet):
     """

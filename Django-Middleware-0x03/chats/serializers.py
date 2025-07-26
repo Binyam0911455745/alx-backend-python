@@ -1,26 +1,36 @@
-# chats/serializers.py
+# Django-Middleware-0x03/chats/serializers.py
 
 from rest_framework import serializers
-from .models import Conversation, Message
-from django.contrib.auth import get_user_model
+from .models import Message, Conversation, User # Assuming these models exist in chats/models.py
 
-User = get_user_model()
+# Serializer for the custom User model (if you have one and want to expose it)
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name'] # Or other relevant fields
 
+# Serializer for a Message
+class MessageSerializer(serializers.ModelSerializer):
+    sender = UserSerializer(read_only=True) # Display sender details, but don't allow setting on create
+    sender_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='sender', write_only=True
+    ) # Allow setting sender by ID for create/update
+
+    class Meta:
+        model = Message
+        fields = ['id', 'conversation', 'sender', 'sender_id', 'content', 'timestamp']
+        read_only_fields = ['timestamp']
+
+# Serializer for a Conversation
 class ConversationSerializer(serializers.ModelSerializer):
-    # This is likely the problematic part:
-    # If you have 'conversation_id' listed here, remove it.
-    # It should NOT be a field that you explicitly provide when creating a Conversation.
-    # The 'id' of the conversation is auto-generated.
+    participants = UserSerializer(many=True, read_only=True) # Display participant details
+    participant_ids = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), many=True, write_only=True, source='participants'
+    ) # Allow setting participants by IDs
 
-    participants = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        many=True
-    )
+    messages = MessageSerializer(many=True, read_only=True) # Nested messages
 
     class Meta:
         model = Conversation
-        # Ensure 'id' is listed if you want it to be included in the response (read-only)
-        # And make sure 'conversation_id' is NOT in this list, unless your Conversation model
-        # explicitly has a field named 'conversation_id' (which is highly unlikely and redundant).
-        fields = ['id', 'participants', 'created_at', 'updated_at'] # OR whatever fields you have
-        read_only_fields = ['id', 'created_at', 'updated_at'] # 'id' should usually be read-only
+        fields = ['id', 'participants', 'participant_ids', 'topic', 'messages', 'created_at']
+        read_only_fields = ['created_at']

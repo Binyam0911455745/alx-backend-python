@@ -2,3 +2,5 @@
 2025-07-26 14:37:29.677063 - User: AnonymousUser - Method: GET - Path: /admin/login/
 2025-07-26 14:37:47.280438 - User: AnonymousUser - Method: POST - Path: /admin/login/
 2025-07-26 14:38:00.137690 - User: AnonymousUser - Method: POST - Path: /admin/login/
+2025-07-26 14:43:50.881178 - User: AnonymousUser - Method: GET - Path: /admin/
+2025-07-26 14:43:50.935600 - User: AnonymousUser - Method: GET - Path: /admin/login/

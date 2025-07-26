@@ -51,8 +51,10 @@ class RolePermissionMiddleware:
         if request.user.is_authenticated:
             # Check if the user is admin or moderator
             if not (request.user.is_staff or request.user.is_superuser):
+                logger.warning(f"Unauthorized access attempt by user: {request.user.username}")
                 return HttpResponseForbidden("You do not have permission to access this resource.")
         else:
+            logger.warning("Unauthorized access attempt by unauthenticated user.")
             return HttpResponseForbidden("You do not have permission to access this resource.")
 
         response = self.get_response(request)

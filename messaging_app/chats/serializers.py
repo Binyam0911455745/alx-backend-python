@@ -22,5 +22,9 @@ class ConversationSerializer(serializers.ModelSerializer):
         # Ensure 'id' is listed if you want it to be included in the response (read-only)
         # And make sure 'conversation_id' is NOT in this list, unless your Conversation model
         # explicitly has a field named 'conversation_id' (which is highly unlikely and redundant).
-        fields = ['id', 'participants', 'created_at', 'updated_at'] # OR whatever fields you have
+        fields = '__all__'  # OR whatever fields you have
         read_only_fields = ['id', 'created_at', 'updated_at'] # 'id' should usually be read-only
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'  # Adjust fields as necessary

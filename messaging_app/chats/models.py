@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db.models import Q # Added for potential future filtering in views
+from django.conf import settings
 
 
 # Custom Manager for User
@@ -93,7 +94,7 @@ class Conversation(models.Model):
     # If you want a UUID primary key for Conversation, change `id` field:
     # conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    participants = models.ManyToManyField(User, related_name='conversations')
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL)
     created_at = models.DateTimeField(auto_now_add=True) # Automatically set creation time
     updated_at = models.DateTimeField(auto_now=True)     # Automatically update on save
     

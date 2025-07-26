@@ -1,3 +1,5 @@
+# Django-Middleware-0x03/messaging_app/settings.py
+
 """
 Django settings for messaging_app project.
 
@@ -11,7 +13,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from datetime import timedelta # Added for SIMPLE_JWT configuration
+from datetime import timedelta
+import os # Make sure this is imported for os.path.join used in LOGGING
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,7 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'chats.middleware.RequestLoggingMiddleware', # <--- ADDED FOR TASK 1
+    'chats.middleware.RequestLoggingMiddleware', # Your existing logging middleware
+    'chats.middleware.restrict_by_time.RestrictAccessByTimeMiddleware', # <--- NEW: Time-based access restriction
 ]
 
 ROOT_URLCONF = 'messaging_app.urls'
@@ -113,11 +118,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Addis_Ababa' # <--- IMPORTANT: Set your specific timezone if not UTC
+                                 # This ensures datetime.now().hour aligns with your local time
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False # <--- IMPORTANT: Set to False if you want datetime.now() to always
+               # return naive datetime objects in local time.
+               # If you set to True, you should use django.utils.timezone.now()
+               # to get timezone-aware datetimes. For this specific middleware,
+               # naive datetime from datetime.now() with TIME_ZONE=False works for local hour.
 
 
 # Static files (CSS, JavaScript, Images)
@@ -180,4 +190,55 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+}
+
+
+# LOGGING configuration for Django (Add this block at the end of your settings.py)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'request_formatter': { # Custom formatter for your request log
+            'format': '{message}', # Only the message provided by logger.info()
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'requests_file': { # Handler for requests.log
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'requests.log'), # Log file in project root
+            'formatter': 'request_formatter', # Use the custom formatter
+        },
+    },
+    'loggers': {
+        'django': { # Django's own logger
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'chats.middleware': { # Logger for your custom RequestLoggingMiddleware
+            'handlers': ['requests_file', 'console'], # Send to file and console
+            'level': 'INFO',
+            'propagate': False, # Important: Prevent logs from being handled by parent loggers
+        },
+        # You can add other app-specific loggers here if needed
+    },
+    'root': { # Root logger for anything not specifically handled
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
 }

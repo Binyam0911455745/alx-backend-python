@@ -59,7 +59,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'chats.middleware.RequestLoggingMiddleware', # Your existing logging middleware
-    'chats.middleware.restrict_by_time.RestrictAccessByTimeMiddleware', # <--- NEW: Time-based access restriction
 ]
 
 ROOT_URLCONF = 'messaging_app.urls'

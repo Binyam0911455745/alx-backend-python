@@ -1,44 +1,24 @@
-# chats/middleware.py
+# Django-Middleware-0x03/chats/middleware.py
 
+import logging
 from datetime import datetime
-import os
-from django.conf import settings
+
+# Get an instance of a logger for this module
+logger = logging.getLogger(__name__) # __name__ will be 'chats.middleware'
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        # Define the log file path in the project root
-        self.log_file_path = os.path.join(settings.BASE_DIR, 'requests.log')
 
     def __call__(self, request):
-        # Code to be executed for each request before the view is called.
-
-        # Get current timestamp
+        # Log the request information using the logger
+        user = request.user.username if request.user.is_authenticated else 'AnonymousUser'
+        method = request.method
+        path = request.path
         timestamp = datetime.now()
 
-        # Get the user. If the user is authenticated, use their username.
-        # Otherwise, use 'AnonymousUser'.
-        user = request.user.username if request.user.is_authenticated else 'AnonymousUser'
+        # The message format matches your previous manual logging output
+        logger.info(f"{timestamp} - User: {user} - Method: {method} - Path: {path}")
 
-        # Get the request path and method
-        path = request.path
-        method = request.method
-
-        # Construct the log message
-        log_message = f"{timestamp} - User: {user} - Method: {method} - Path: {path}\n"
-
-        # Log the information to the 'requests.log' file
-        try:
-            with open(self.log_file_path, 'a') as f:
-                f.write(log_message)
-        except IOError as e:
-            print(f"Error writing to log file {self.log_file_path}: {e}") # For debugging in console
-
-        # Call the next middleware or the view
         response = self.get_response(request)
-
-        # Code to be executed for each request after the view is called.
-        # (For this task, we are primarily logging incoming requests, but this is where
-        # you'd add post-response logging if needed, e.g., response.status_code)
-
         return response

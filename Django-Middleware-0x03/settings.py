@@ -54,11 +54,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware', # Corrected spelling
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'chats.middleware.RequestLoggingMiddleware', # <--- Added for Task 1 (Logging)
+    'chats.middleware.logging_middleware.RequestLoggingMiddleware',       # <--- CORRECTED PATH
+    'chats.middleware.restrict_by_time.RestrictAccessByTimeMiddleware',   # <--- ADDED NEW MIDDLEWARE
 ]
 
 ROOT_URLCONF = 'messaging_app.urls'
@@ -117,11 +118,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Addis_Ababa' # <--- IMPORTANT: Set to your specific timezone for local time
+                                 # Used by datetime.now() in RestrictAccessByTimeMiddleware
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False # <--- IMPORTANT: Set to False if you want datetime.now() to always
+               # return naive datetime objects in local time according to TIME_ZONE.
+               # If set to True, you should use django.utils.timezone.now() for timezone-aware datetimes.
 
 
 # Static files (CSS, JavaScript, Images)
@@ -187,7 +191,7 @@ SIMPLE_JWT = {
 }
 
 
-# LOGGING configuration for Django (Add this block at the end of your settings.py)
+# LOGGING configuration for Django (This section is already correct from previous steps)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -224,7 +228,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'chats.middleware': { # Logger for your custom RequestLoggingMiddleware
+        'chats.middleware.logging_middleware': { # <--- Corrected logger name for logging middleware
             'handlers': ['requests_file', 'console'], # Send to file and console
             'level': 'INFO',
             'propagate': False, # Important: Prevent logs from being handled by parent loggers

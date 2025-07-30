@@ -100,7 +100,7 @@ class MessageDetailWithHistoryView(generics.RetrieveAPIView):
             raise Http404("You do not have permission to view this message.")
         return obj
     
-
+@method_decorator(cache_page(60), name='dispatch')
 class ThreadedMessageListView(generics.ListAPIView):
     """
     API endpoint to list top-level messages.

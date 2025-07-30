@@ -7,7 +7,8 @@ from messaging.views import (
     MessageHistoryListView,
     DeleteUserAccountView,
     MessageCreateView,      # <--- ADDED for creating messages/replies
-    ThreadedMessageListView # <--- ADDED for listing threaded conversations
+    ThreadedMessageListView, # <--- ADDED for listing threaded conversations
+    UnreadMessageListView
 )
 
 urlpatterns = [
@@ -19,6 +20,7 @@ urlpatterns = [
     # Message-related URLs
     path('api/messages/', ThreadedMessageListView.as_view(), name='message-list-threaded'), # For listing top-level threaded messages
     path('api/messages/create/', MessageCreateView.as_view(), name='message-create'), # For creating new messages
+    path('api/messages/unread/', UnreadMessageListView.as_view(), name='message-list-unread'), # <--- ADDED URL for unread messages
     path('api/messages/<int:pk>/', MessageDetailWithHistoryView.as_view(), name='message-detail-with-history'),
     path('api/messages/<int:message_pk>/history/', MessageHistoryListView.as_view(), name='message-history-list'),
 

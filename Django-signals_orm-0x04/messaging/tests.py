@@ -199,3 +199,68 @@ class SignalTest(TestCase):
 
         # All notifications for the deleted user (user FK) should be gone
         self.assertEqual(Notification.objects.filter(user_id=user_to_delete_id).count(), 0)
+
+class UnreadMessagesManagerTest(APITestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='reader', password='password1')
+        self.user2 = User.objects.create_user(username='sender', password='password2')
+        self.user3 = User.objects.create_user(username='other_user', password='password3')
+
+        # Messages to user1 (reader)
+        self.unread_msg1 = Message.objects.create(sender=self.user2, receiver=self.user1, content="Hello unread 1", is_read=False)
+        self.unread_msg2 = Message.objects.create(sender=self.user3, receiver=self.user1, content="Hello unread 2", is_read=False)
+        self.read_msg1 = Message.objects.create(sender=self.user2, receiver=self.user1, content="Hello read 1", is_read=True)
+
+        # Message not for user1
+        self.msg_for_other = Message.objects.create(sender=self.user1, receiver=self.user3, content="Hello other", is_read=False)
+
+        self.client.force_authenticate(user=self.user1)
+
+    def test_unread_messages_for_user_manager_method(self):
+        """
+        Test the custom manager method to filter unread messages.
+        """
+        unread_messages = Message.unread_messages.unread_for_user(self.user1)
+        self.assertEqual(unread_messages.count(), 2)
+        self.assertIn(self.unread_msg1, unread_messages)
+        self.assertIn(self.unread_msg2, unread_messages)
+        self.assertNotIn(self.read_msg1, unread_messages)
+        self.assertNotIn(self.msg_for_other, unread_messages)
+
+    def test_unread_message_list_view(self):
+        """
+        Test the API endpoint for listing unread messages.
+        """
+        url = reverse('message-list-unread')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        # Check content of unread messages
+        response_contents = [d['content'] for d in response.data]
+        self.assertIn(self.unread_msg1.content, response_contents)
+        self.assertIn(self.unread_msg2.content, response_contents)
+        self.assertNotIn(self.read_msg1.content, response_contents)
+        self.assertNotIn(self.msg_for_other.content, response_contents)
+
+    def test_unread_message_list_view_query_optimization(self):
+        """
+        Test query optimization for UnreadMessageListView using .only() and select_related().
+        """
+        url = reverse('message-list-unread')
+
+        # The exact number of queries can vary.
+        # With select_related for sender/receiver and .only() for specific fields,
+        # it should be 1 query for messages, and 1 query for each distinct sender/receiver if not in cache.
+        # Often it's just 1 or 2 queries.
+        with self.assertNumQueries(less_than=5): # Adjust this number based on your actual results.
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+            # Verify data integrity even with .only()
+            self.assertGreater(len(response.data), 0)
+            self.assertIn('sender', response.data[0])
+            self.assertIn('content', response.data[0])
+            self.assertEqual(response.data[0]['is_read'], False)
+
+# ... (Your existing ThreadedMessageTest and SignalTest classes) ...

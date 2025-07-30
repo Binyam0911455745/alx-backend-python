@@ -13,6 +13,31 @@ from .serializers import RecursiveReplySerializer, UserSerializer # Assuming you
 
 User = get_user_model()
 
+class UnreadMessageListView(generics.ListAPIView):
+    """
+    API endpoint to list unread messages for the authenticated user.
+    """
+    serializer_class = MessageDetailSerializer # Re-use MessageDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Use the custom manager to filter unread messages for the current user
+        queryset = Message.unread_messages.unread_for_user(user)
+
+        # Optimize with select_related for sender/receiver
+        # and .only() to retrieve only necessary fields.
+        # Include fields needed by the serializer (MessageDetailSerializer).
+        queryset = queryset.select_related(
+            'sender', 'receiver'
+        ).only(
+            'id', 'sender__username', 'receiver__username', 'content',
+            'timestamp', 'is_read', 'edited', 'parent_message_id' # parent_message_id to access parent_message indirectly
+        ).order_by('-timestamp') # Order by most recent unread messages
+
+        return queryset
+
+
 class MessageCreateView(generics.CreateAPIView):
     queryset = Message.objects.all()
     serializer_class = MessageDetailSerializer # Use the detail serializer for creation

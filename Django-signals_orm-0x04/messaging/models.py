@@ -2,8 +2,27 @@
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models import F # Keep F object for database expressions if used elsewhere
 
 User = get_user_model()
+
+class MessageManager(models.Manager):
+    def get_threaded_conversation(self, root_message_id):
+        # ... (your existing implementation) ...
+        pass # Keep your actual implementation
+
+    def get_all_descendants(self, root_message_id):
+        # ... (your existing implementation) ...
+        pass # Keep your actual implementation
+
+
+# NEW: Custom Manager for Unread Messages
+class UnreadMessagesManager(models.Manager):
+    def unread_for_user(self, user):
+        """
+        Filters messages that are unread and received by the specified user.
+        """
+        return self.filter(receiver=user, is_read=False)
 
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -39,6 +58,11 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.content[:50]}..."
+    def get_direct_replies(self):
+        return self.replies.all().order_by('timestamp')
+
+    def get_all_threaded_replies(self):
+        return Message.objects.get_all_descendants(self.id)
 
 class MessageHistory(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')

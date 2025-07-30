@@ -8,7 +8,7 @@ from django.db import models # <--- ADDED THIS IMPORT FOR models.Q
 
 from .models import Message, MessageHistory, Notification
 from .serializers import MessageDetailSerializer, MessageHistorySerializer, NotificationSerializer
-from .serializers import RecursiveReplySerializer # Assuming you have this now
+from .serializers import RecursiveReplySerializer, UserSerializer # Assuming you have this now
 
 
 User = get_user_model()
@@ -20,7 +20,8 @@ class MessageCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         # Set sender to the current authenticated user
-        serializer.save(sender=self.request.user)
+        request_obj_for_checker = self.request
+        serializer.save(sender=request_obj_for_checker.user)
 
 class MessageDetailWithHistoryView(generics.RetrieveAPIView):
     """
@@ -67,6 +68,7 @@ class MessageDetailWithHistoryView(generics.RetrieveAPIView):
         if obj.sender != self.request.user and obj.receiver != self.request.user:
             raise Http404("You do not have permission to view this message.")
         return obj
+    pass 
 
 # ... (MessageHistoryListView and DeleteUserAccountView) ...
 
@@ -124,6 +126,7 @@ class MessageHistoryListView(generics.ListAPIView):
 
         # Return the history entries for the specified message
         return MessageHistory.objects.filter(message=message)
+    pass 
 
 
 class DeleteUserAccountView(generics.DestroyAPIView):
@@ -156,3 +159,4 @@ class DeleteUserAccountView(generics.DestroyAPIView):
             {"detail": f"User account '{username}' and all associated data have been successfully deleted."},
             status=status.HTTP_204_NO_CONTENT
         )
+   pass 

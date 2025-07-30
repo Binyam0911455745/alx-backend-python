@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 from django.urls import path, include
-from django.views.decorators.cache import cache_page
+#from django.views.decorators.cache import cache_page
 from messaging.views import (
     MessageDetailWithHistoryView,
     MessageHistoryListView,
@@ -13,7 +13,7 @@ from messaging.views import (
 )
 
 # Define the cache timeout in seconds
-CACHE_TIMEOUT = 60 # As per instruction: 60 seconds
+#CACHE_TIMEOUT = 60 # As per instruction: 60 seconds
 
 urlpatterns = [
     path('admin/', admin.site.urls),

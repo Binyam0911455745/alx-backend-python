@@ -6,6 +6,10 @@ from django.contrib.auth import get_user_model
 from django.http import Http404
 from django.db import models
 
+from django.utils.decorators import method_decorator # <--- NEW IMPORT for decorating methods
+from django.views.decorators.cache import cache_page # <--- NEW IMPORT for cache_page
+
+
 from .models import Message, MessageHistory, Notification
 from .serializers import MessageDetailSerializer, MessageHistorySerializer, NotificationSerializer
 from .serializers import RecursiveReplySerializer, UserSerializer # Assuming you have this now

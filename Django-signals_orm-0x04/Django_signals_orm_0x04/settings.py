@@ -124,3 +124,23 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Django-signals_orm-0x04/Django_signals_orm_0x04/settings.py
+
+# ... (rest of your settings.py content) ...
+
+# ----------------------------------------------------------------------
+# NEW: Caching Configuration
+# ----------------------------------------------------------------------
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake', # A unique string to separate cache instances
+    }
+}
+
+# You might also want to set a default cache timeout for all caches,
+# although we'll override it for the specific view.
+# CACHE_MIDDLEWARE_SECONDS = 600 # Example: Cache for 10 minutes by default
+# CACHE_MIDDLEWARE_KEY_PREFIX = 'myapp' # Optional: Prefix for cache keys
+# CACHE_MIDDLEWARE_ALIAS = 'default' # Which cache to use by default

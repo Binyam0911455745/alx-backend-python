@@ -19,6 +19,7 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    edited = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['timestamp']
@@ -52,3 +53,25 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.content[:50]}..."
+
+class MessageHistory(models.Model): # <--- NEW MODEL: To store old content versions
+    """
+    Stores historical versions of a Message's content when it's edited.
+    """
+    message = models.ForeignKey(
+        Message,
+        related_name='history', # Allows accessing history from Message instance: message.history.all()
+        on_delete=models.CASCADE
+    )
+    old_content = models.TextField() # The content before the edit
+    edited_at = models.DateTimeField(auto_now_add=True) # When this specific edit history was recorded
+
+    class Meta:
+        ordering = ['-edited_at'] # Newest old version first
+        verbose_name = "Message History"
+        verbose_name_plural = "Message Histories"
+
+    def __str__(self):
+        return f"History for Message {self.message.id} at {self.edited_at.strftime('%Y-%m-%d %H:%M')}"
+
+

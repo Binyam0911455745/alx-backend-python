@@ -1,22 +1,15 @@
-"""
-URL configuration for Django_signals_orm_0x04 project.
+# Django-signals_orm-0x04/Django_signals_orm_0x04/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from messaging.views import MessageDetailWithHistoryView, MessageHistoryListView, DeleteUserAccountView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Existing API endpoints
+    path('api/messages/<int:pk>/', MessageDetailWithHistoryView.as_view(), name='message-detail-with-history'),
+    path('api/messages/<int:message_pk>/history/', MessageHistoryListView.as_view(), name='message-history-list'),
+
+    # NEW URL for user deletion
+    path('api/delete-my-account/', DeleteUserAccountView.as_view(), name='delete-my-account'), # <--- ENSURE THIS COMMA IS HERE
 ]

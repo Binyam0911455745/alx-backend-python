@@ -8,29 +8,99 @@ from django.db import models # <--- ADDED THIS IMPORT FOR models.Q
 
 from .models import Message, MessageHistory, Notification
 from .serializers import MessageDetailSerializer, MessageHistorySerializer, NotificationSerializer
+from .serializers import RecursiveReplySerializer # Assuming you have this now
+
 
 User = get_user_model()
 
+class MessageCreateView(generics.CreateAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageDetailSerializer # Use the detail serializer for creation
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Set sender to the current authenticated user
+        serializer.save(sender=self.request.user)
+
 class MessageDetailWithHistoryView(generics.RetrieveAPIView):
     """
-    API endpoint to retrieve a single message with its full edit history.
+    API endpoint to retrieve a single message with its full edit history
+    and its threaded replies, optimized with select_related and prefetch_related.
     """
-    queryset = Message.objects.all()
     serializer_class = MessageDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Ensure users can only see messages they sent or received
         user = self.request.user
-        # Correctly using models.Q for OR conditions in filtering
-        return Message.objects.filter(models.Q(sender=user) | models.Q(receiver=user))
+        # The root message and all its replies can be fetched in a more optimized way
+        # if the custom manager is leveraged.
+        # For a single message detail, we want the root message + its history + its replies.
+        # The recursive serializer will handle the deep fetching if the 'replies'
+        # relationship is preloaded.
+
+        # Fetch the message and its sender/receiver (select_related)
+        # Fetch its history (prefetch_related)
+        # Fetch its direct replies and their senders/receivers (prefetch_related and __)
+        # If the recursive serializer is used, the nested 'replies' will trigger further queries
+        # unless you prefetch recursively. Django's ORM doesn't do deep prefetching easily
+        # for arbitrary depth recursion.
+
+        # Corrected for potential N+1 on replies' senders/receivers
+        return Message.objects.filter(
+            models.Q(sender=user) | models.Q(receiver=user)
+        ).select_related(
+            'sender', 'receiver', 'parent_message' # select_related for FKs
+        ).prefetch_related(
+            'history', # Prefetch MessageHistory objects
+            'replies__sender', # Prefetch sender for direct replies
+            'replies__receiver', # Prefetch receiver for direct replies
+            # If you expect many levels of replies and want to reduce queries for N levels:
+            # 'replies__replies__sender', 'replies__replies__receiver', etc.
+            # This becomes cumbersome quickly.
+            # For true deep recursive fetching in one go, you might need the custom manager's
+            # get_all_descendants method, and then reconstruct the tree in Python,
+            # or use raw SQL CTEs.
+        ).all()
 
     def get_object(self):
-        # Get the object and verify permissions for the specific instance
         obj = super().get_object()
         if obj.sender != self.request.user and obj.receiver != self.request.user:
             raise Http404("You do not have permission to view this message.")
         return obj
+
+# ... (MessageHistoryListView and DeleteUserAccountView) ...
+
+# NEW: A view to list top-level messages or entire threads
+class ThreadedMessageListView(generics.ListAPIView):
+    """
+    API endpoint to list top-level messages.
+    Each message will include its threaded replies using the recursive serializer.
+    """
+    serializer_class = MessageDetailSerializer # Reusing the detail serializer that includes replies
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Fetch top-level messages (parent_message is null)
+        queryset = Message.objects.filter(
+            models.Q(sender=user) | models.Q(receiver=user),
+            parent_message__isnull=True # Only retrieve top-level messages
+        ).select_related(
+            'sender', 'receiver'
+        ).prefetch_related(
+            'history',
+            # For recursive prefetching, this is tricky. You'd typically only prefetch
+            # the immediate children here, and let the RecursiveReplySerializer handle
+            # further levels, which might incur N+1 queries for deep trees.
+            # A truly optimized recursive fetch often requires a custom manager method
+            # that returns a flat list of all thread members, then Python reassembles.
+            'replies__sender',
+            'replies__receiver',
+            'replies__history', # Pre-fetching history for direct replies as well
+        ).order_by('-timestamp')
+
+        return queryset
+
 
 
 class MessageHistoryListView(generics.ListAPIView):

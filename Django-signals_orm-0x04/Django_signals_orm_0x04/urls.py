@@ -1,15 +1,27 @@
-# Django-signals_orm-0x04/Django_signals_orm_0x04/urls.py
+# Django-signals_orm_0x04/urls.py
 
 from django.contrib import admin
 from django.urls import path, include
-from messaging.views import MessageDetailWithHistoryView, MessageHistoryListView, DeleteUserAccountView
+from messaging.views import (
+    MessageDetailWithHistoryView,
+    MessageHistoryListView,
+    DeleteUserAccountView,
+    MessageCreateView,      # <--- ADDED for creating messages/replies
+    ThreadedMessageListView # <--- ADDED for listing threaded conversations
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Existing API endpoints
+    # Authentication URLs (if you're using Djoser or similar)
+    # path('api/auth/', include('djoser.urls')),
+    # path('api/auth/', include('djoser.urls.jwt')), # For JWT auth
+
+    # Message-related URLs
+    path('api/messages/', ThreadedMessageListView.as_view(), name='message-list-threaded'), # For listing top-level threaded messages
+    path('api/messages/create/', MessageCreateView.as_view(), name='message-create'), # For creating new messages
     path('api/messages/<int:pk>/', MessageDetailWithHistoryView.as_view(), name='message-detail-with-history'),
     path('api/messages/<int:message_pk>/history/', MessageHistoryListView.as_view(), name='message-history-list'),
 
-    # NEW URL for user deletion
-    path('api/delete-my-account/', DeleteUserAccountView.as_view(), name='delete-my-account'), # <--- ENSURE THIS COMMA IS HERE
+    # User account deletion
+    path('api/users/delete-my-account/', DeleteUserAccountView.as_view(), name='delete-my-account'),
 ]

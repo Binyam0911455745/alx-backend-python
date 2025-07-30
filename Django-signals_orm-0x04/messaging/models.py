@@ -12,7 +12,15 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     edited = models.BooleanField(default=False) # Indicates if the message has been edited
-
+    
+    # ADD THIS FIELD: Self-referential ForeignKey for replies
+    parent_message = models.ForeignKey(
+        'self', # Refers to the Message model itself
+        on_delete=models.SET_NULL, # If the parent message is deleted, set this to NULL
+        null=True,                # Allows the field to be NULL (top-level messages have no parent)
+        blank=True,               # Allows the field to be blank in forms/admin
+        related_name='replies'    # Reverse relation: message.replies will get all its children
+    )
     class Meta:
         ordering = ['timestamp']
 

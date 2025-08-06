@@ -13,16 +13,13 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: 'mydatabase'
-      # So you don't have to use root, but you can if you like
       MYSQL_USER: 'myuser'
-      # You can use a more complex password here
       MYSQL_PASSWORD: 'mypassword'
       MYSQL_ROOT_PASSWORD: 'mypassword'
-    ports:
-      # <Host port>:<Container port>
-      - '3307:3306'
     volumes:
-      - my-db:/var/lib/mysql
+      - my-db:/var/lib/mysql # This line links the volume
+    ports:
+      - '3307:3306'
 
 volumes:
   my-db:

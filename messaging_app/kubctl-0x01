@@ -1,22 +1,15 @@
 #!/bin/bash
 
-# 1. Scale the number of replicas to 3
-echo "Scaling the 'messaging-app-deployment' to 3 replicas..."
+# Scale the deployment to 3 replicas
 kubectl scale deployment messaging-app-deployment --replicas=3
 
-# 2. Verify that 3 pods are running
-echo "Verifying the pod count..."
+# Verify the number of running pods
 kubectl get pods
 
-# 3. Perform a basic load test using 'wrk'
-# First, get the URL of the service
-echo "Getting the service URL for load testing..."
-SERVICE_URL=$(minikube service messaging-app-service --url)
-
-# Perform a load test on the service for 10 seconds
-echo "Running a load test with 'wrk' for 10 seconds..."
+# Get the service URL and perform a load test
+SERVICE_URL=* service default/messaging-app-service has no node port
+http://127.0.0.1:56499
 wrk -t4 -c100 -d10s "${SERVICE_URL}/api/"
 
-# 4. Monitor resource usage
-echo "Monitoring resource usage of the pods..."
+# Monitor resource usage
 kubectl top pods

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-vj&u&q81!3hm2h_92yavxzmn!p3um7k2fg12)xjzr+x2d(_4-v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['messaging-app.info', '127.0.0.1']
 
 
 # Application definition

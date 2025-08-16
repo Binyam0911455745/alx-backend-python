@@ -1,0 +1,25 @@
+# File: messaging_app/green_deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-app-green-deployment
+  labels:
+    app: messaging-app
+    version: green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: messaging-app
+      version: green
+  template:
+    metadata:
+      labels:
+        app: messaging-app
+        version: green
+    spec:
+      containers:
+      - name: messaging-app-container
+        image: binyamtilahu/messaging-app:latest
+        ports:
+        - containerPort: 8000

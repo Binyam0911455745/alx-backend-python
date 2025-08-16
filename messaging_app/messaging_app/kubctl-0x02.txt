@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Deploy the blue version
+echo "Deploying the blue version..."
+kubectl apply -f blue_deployment.yaml
+
+# Deploy the green version
+echo "Deploying the green version..."
+kubectl apply -f green_deployment.yaml
+
+echo "Waiting for pods to be ready..."
+sleep 15
+
+# Get the name of the new green pod
+GREEN_POD_NAME=$(kubectl get pods -l app=messaging-app,version=green -o jsonpath="{.items[0].metadata.name}")
+
+if [ -z "$GREEN_POD_NAME" ]; then
+    echo "❌ Green pod not found. Exiting."
+    exit 1
+fi
+
+echo "✅ New green pod '$GREEN_POD_NAME' is running."
+
+echo "Checking logs of the new green pod for errors..."
+kubectl logs "$GREEN_POD_NAME"
+
+# Prompt user for switch
+echo "The new green version is now deployed. Do you want to switch traffic to it?"
+echo "To switch traffic, you would need to change the 'version' label in 'kubeservice.yaml' from 'blue' to 'green' and re-apply."
+echo "kubectl apply -f kubeservice.yaml"
+
+echo "Script finished."

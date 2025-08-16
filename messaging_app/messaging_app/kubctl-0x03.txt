@@ -1,0 +1,31 @@
+#!/bin/bash
+
+DEPLOYMENT_NAME="messaging-app-blue-deployment"
+SERVICE_NAME="messaging-app-service"
+
+echo "🚀 Starting rolling update for deployment '$DEPLOYMENT_NAME'..."
+kubectl apply -f blue_deployment.yaml &
+
+# Monitor the update progress
+echo "⏱️ Monitoring rollout status. This may take a few moments..."
+kubectl rollout status deployment/$DEPLOYMENT_NAME
+
+echo "✅ Rolling update is complete."
+
+# Test the app continuously with curl to check for downtime
+echo "Sending continuous requests to the service to check for downtime..."
+echo "Press Ctrl+C to stop."
+while true; do
+  curl -s "http://$SERVICE_NAME" > /dev/null
+  if [ $? -eq 0 ]; then
+    echo "✔️ Request successful."
+  else
+    echo "❌ Request failed. App may have experienced downtime."
+  fi
+  sleep 1
+done
+
+echo "🔍 Verifying all replicas are updated..."
+kubectl get pods --selector=app=messaging-app,version=blue
+
+echo "🎉 Script finished."

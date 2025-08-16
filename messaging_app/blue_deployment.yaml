@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: messaging-app-deployment
-  labels:
-    app: messaging-app
 spec:
   replicas: 1
   selector:
@@ -29,6 +27,6 @@ spec:
     app: messaging-app
   ports:
     - protocol: TCP
-      port: 80
+      port: 8000
       targetPort: 8000
   type: ClusterIP

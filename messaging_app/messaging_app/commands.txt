@@ -1,0 +1,1 @@
+echo "kubectl apply -f ingress.yaml" > messaging_app/commands.txt

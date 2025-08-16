@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# This script scales a Kubernetes deployment, verifies it, performs a load test, and monitors resources.
+
+DEPLOYMENT_NAME="messaging-app-deployment"
+SERVICE_NAME="messaging-app-service"
+
+echo "🚀 Scaling deployment '$DEPLOYMENT_NAME' to 3 replicas..."
+kubectl scale deployment/$DEPLOYMENT_NAME --replicas=3
+
+# Check for successful scaling
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to scale the deployment."
+    exit 1
+fi
+
+echo "✅ Scaling successful. Verifying pods..."
+kubectl get pods --selector=app=messaging-app --watch
+
+echo "🎉 Multiple pods are now running."
+
+# A note on load testing with ClusterIP
+echo "-------------------------------------"
+echo "Load Testing: This assumes 'wrk' is installed and you are running the test from within the cluster or have a way to access the ClusterIP."
+echo "Running a load test with 10 threads and 100 connections for 30 seconds."
+echo "You may need to install 'wrk' if not already installed (e.g., sudo apt install wrk)."
+wrk -t10 -c100 -d30s "http://$SERVICE_NAME"
+echo "-------------------------------------"
+
+echo "📈 Monitoring resource usage of the pods..."
+echo "Note: This command requires the 'metrics-server' to be running in your cluster (minikube addons enable metrics-server)."
+kubectl top pods --selector=app=messaging-app
+
+echo "✅ Script finished."

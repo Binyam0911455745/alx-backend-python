@@ -38,7 +38,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r messaging_app/requirements.txt
-          pip install pytest
+          pip install flake8 pytest-cov
+
+      - name: Lint with flake8
+        run: |
+          flake8 messaging_app/ --ignore=E501,F401
 
       - name: Wait for MySQL to be ready
         run: |
@@ -49,8 +53,14 @@ jobs:
             sleep 1
           done
 
-      - name: Run tests
+      - name: Run tests with coverage
         env:
           DATABASE_URL: mysql://root:${{ secrets.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/messaging_app_test
         run: |
-          pytest
+          pytest --cov=messaging_app --cov-report=xml
+
+      - name: Upload code coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage-report
+          path: coverage.xml

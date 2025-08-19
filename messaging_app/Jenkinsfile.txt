@@ -1,0 +1,36 @@
+// File: messaging_app/Jenkinsfile
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository...'
+                git branch: 'main', url: 'https://github.com/Binyam0911455745/alx-backend-python.git', credentialsId: 'github-credentials'
+            }
+        }
+
+        stage('Build and Test') {
+            steps {
+                echo 'Creating Python virtual environment...'
+                sh 'python3 -m venv venv'
+                sh 'source venv/bin/activate'
+
+                echo 'Installing dependencies...'
+                sh 'pip install -r requirements.txt'
+                sh 'pip install pytest'
+
+                echo 'Running tests...'
+                sh 'pytest --junitxml=test-reports/report.xml'
+            }
+        }
+
+        stage('Publish Test Report') {
+            steps {
+                echo 'Publishing test report...'
+                junit 'test-reports/report.xml'
+            }
+        }
+    }
+}

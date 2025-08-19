@@ -18,8 +18,8 @@ pipeline {
                 sh 'source venv/bin/activate'
 
                 echo 'Installing dependencies...'
-                sh 'pip install -r requirements.txt'
-                sh 'pip install pytest'
+                sh 'pip3 install -r messaging_app/requirements.txt'
+                sh 'pip3 install pytest'
 
                 echo 'Running tests...'
                 sh 'pytest --junitxml=test-reports/report.xml'
